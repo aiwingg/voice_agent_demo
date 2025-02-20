@@ -94,7 +94,7 @@ function App() {
       <button onClick={startOrRestartCall} style={styles.button}>
         {callActive ? "Restart Voice Agent" : "🎤 Start Voice Agent"}
       </button>
-    </div>r
+    </div>
   );
 }
 
