@@ -48,7 +48,7 @@ function App() {
   // Fetch the web call token from your own server endpoint
   const createWebCall = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/create-web-call', {
+      const response = await fetch('/api/create-web-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Optionally send additional data if needed
