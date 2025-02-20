@@ -8,7 +8,6 @@ function App() {
   useEffect(() => {
     // Initialize Retell client
     retellClientRef.current = new RetellWebClient();
-
     const client = retellClientRef.current;
 
     client.on("call_started", () => {
@@ -48,10 +47,9 @@ function App() {
   // Fetch the web call token from your own server endpoint
   const createWebCall = async () => {
     try {
-      const response = await fetch('/api/create-web-call', {
+      const response = await fetch('/api/create-web-call', { // use relative URL for production
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Optionally send additional data if needed
         body: JSON.stringify({ metadata: { demo: true } }),
       });
       if (!response.ok) {
@@ -64,9 +62,16 @@ function App() {
     }
   };
 
-  // Start the call by obtaining the token from your server
-  const startCall = async () => {
+  // Start or restart the call by stopping any existing call first
+  const startOrRestartCall = async () => {
     try {
+      if (callActive) {
+        console.log("Stopping current call...");
+        await retellClientRef.current.stopCall();
+        // small delay to ensure call is fully stopped (optional)
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      console.log("Creating new web call...");
       const callData = await createWebCall();
       console.log("Call data:", callData);
       const accessToken = callData.access_token;
@@ -77,19 +82,19 @@ function App() {
         emitRawAudioSamples: false, // Optional: disable raw audio sample events
       });
     } catch (error) {
-      console.error("Error starting call:", error);
+      console.error("Error starting/restarting call:", error);
     }
   };
 
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>
-        Voice Agent Demo<br />for<br />Street Rent a Xar
+        Voice Agent Demo<br />for<br />Street Rent a Car
       </h1>
-      <button onClick={startCall} disabled={callActive} style={styles.button}>
-        {callActive ? "Voice Agent Active" : "🎤 Start Voice Agent"}
+      <button onClick={startOrRestartCall} style={styles.button}>
+        {callActive ? "Restart Voice Agent" : "🎤 Start Voice Agent"}
       </button>
-    </div>
+    </div>r
   );
 }
 
