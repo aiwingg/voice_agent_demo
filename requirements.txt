@@ -1,0 +1,8 @@
+python-telegram-bot==20.0b0
+openai
+langchain
+langchain_openai
+pydantic
+fastapi
+dotenv
+langgraph
