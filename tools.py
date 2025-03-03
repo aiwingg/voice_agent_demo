@@ -12,7 +12,7 @@ from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import AIMessage
 
 # Загрузка переменных окружения
-load_dotenv()
+# load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Инициализируем LLM
