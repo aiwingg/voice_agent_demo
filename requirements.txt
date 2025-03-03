@@ -6,3 +6,5 @@ pydantic
 fastapi
 dotenv
 langgraph
+uvicorn
+pyTelegramBotAPI

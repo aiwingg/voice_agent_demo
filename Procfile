@@ -1,2 +1,3 @@
 web: npm start
-worker1: python3 tools.py
+tools: python3 tools.py
+bot: python3 bot.py

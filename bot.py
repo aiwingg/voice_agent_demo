@@ -1,21 +1,4 @@
-import os
-import pickle
-import openai
 import telebot
-from langchain_openai import ChatOpenAI
-from langchain_core.tools import tool
-from langgraph.prebuilt import create_react_agent
-import pandas as pd
-import json
-from pyprojroot import here
-from dotenv import load_dotenv
-import os
-import httpx
-import chromadb
-from chromadb.utils import embedding_functions
-from langchain import LLMChain, PromptTemplate
-import numpy as np
-import numpy as np
 from langchain_core.messages import AIMessage
 import threading
 
@@ -162,30 +145,27 @@ model = ChatOpenAI(
 ########################################
 
 @tool
-def extract_parameters(user_query: str, jargon_text: str = "") -> dict:
+def extract_parameters(user_query: str) -> dict:
     """
     Extract parameters from the user query using an LLM.
 
     Args:
         user_query (str): The query provided by the user.
-        jargon_text (str): A list of jargon terms or guidelines.
-
     Returns:
         dict: A dictionary containing the extracted parameters (pickupTime, dropoffTime, gps, etc.).
     """
     prompt_template = PromptTemplate(
-        input_variables=['user_input', 'jargon_text'],
+        input_variables=['user_input'],
         template="""
-Ты — помощник, который извлекает параметры для бронирования автомобилей из текста пользователя.
-Вот текст пользователя: {user_input}
-Вот список возможных полей (jargon): {jargon_text}
+You're an assistant who extracts parameters for car reservations from user text.
+Here is the user text: {user_input}
 
-Выведи JSON c ключами (например, pickupTime, dropoffTime, gps, carId, customerId, и т.д.).
-Если данных нет — выводи null или пустые поля.
+Output JSON with keys (e.g. pickupTime, dropoffTime, gps, carId, customerId, etc.).
+If there is no data, output null or empty fields.
 """
     )
     chain = LLMChain(prompt=prompt_template, llm=model)
-    response = chain.run({"user_input": user_query, "jargon_text": jargon_text})
+    response = chain.run({"user_input": user_query})
 
     try:
         parsed = json.loads(response)
@@ -350,6 +330,55 @@ General Instructions:
 }
 
 ########################################
+
+def finalize_response(raw_llm_output: str, qna_model) -> str:
+    """
+    A secondary LLM call that removes intermediate “technical” information (e.g., JSON,
+    system hints, internal tools output), from the response, leaving only the
+    user-oriented message.
+
+    :param raw_llm_output: The “raw” text that the agent returned (possibly including JSON).
+    :param qna_model: The LLM model object (e.g. ChatOpenAI) that will filter the text.
+    :return: The final “raw” text intended for the user.
+    """
+
+    filter_prompt = PromptTemplate(
+        input_variables=['assistant_raw_text'],
+        template="""
+You are the post-processor of an assistant's output. You are given a “raw” answer, which may contain a lot of technical details 
+(JSON, intermediate instructions, machine view of any tools output, internal tools output, debug lines).
+
+**Your task**: the output should leave only coherent, user-understandable text in English, without:
+- any mention of JSON, tools, keys, codes, internal “kitchen”;
+- debugging comments and data structure in curly braces;
+- system messages;
+- unnecessary details and intermediate reasoning.
+
+Keep the overall meaning and bottom line. If you need to restate some part for smoothness, do so.
+Speak in a polite and friendly manner, but to the point.
+
+Here's the raw text that needs to be filtered:
+“{assistant_raw_text}”.
+
+Reformat/clean it up so the user gets the final message:
+"""
+    )
+
+    # Складываем промпт и модель в "цепочку"
+    chain = filter_prompt | model
+
+    # Запрашиваем у модели чистый текст
+    response = chain.invoke({"assistant_raw_text": raw_llm_output})
+
+    # Извлекаем текст из объекта AIMessage
+    if isinstance(response, AIMessage):
+        cleaned_text = response.content
+    else:
+        raise TypeError(f"Unexpected response type: {type(response)}")
+
+    return cleaned_text.strip()
+
+########################################
 # 6. Создаём ReAct-агента
 ########################################
 
@@ -367,108 +396,18 @@ graph = create_react_agent(
     tools=tools
 )
 
-
-########################################
-
-def finalize_response(raw_llm_output: str, qna_model) -> str:
-    """
-    Вторичный вызов LLM, который убирает промежуточную «техническую» информацию (например, JSON,
-    системные подсказки, вывод внутренних tools), из ответа, оставляя только
-    пользовательски-ориентированное сообщение.
-
-    :param raw_llm_output: "Сырой" текст, который вернул агент (возможно, включает JSON).
-    :param qna_model: Объект LLM-модели (например, ChatOpenAI), который будет фильтровать текст.
-    :return: Финальный "чистый" текст, предназначенный для пользователя.
-    """
-
-    filter_prompt = PromptTemplate(
-        input_variables=['assistant_raw_text'],
-        template="""
-Ты — постпроцессор вывода ассистента. Тебе даётся "сырой" ответ, в котором может быть много технических подробностей 
-(JSON, промежуточные инструкции, машинный вид вывода любых tools, вывод внутренних tools (extract_parameters, merge_params и т. д.), отладочные строки).
-
-**Твоя задача**: на выходе должен остаться только связный, понятный пользователю текст на русском языке, без:
-- любых упоминаний о JSON, инструментах, ключах, кодах, внутренней "кухне";
-- отладочных комментариев и структуры данных в фигурных скобках;
-- системных сообщений;
-- лишних деталей и промежуточных рассуждений.
-
-Сохрани общий смысл и итоговый вывод. Если надо переформулировать какую-то часть для плавности — сделай это.
-Говори вежливо и дружелюбно, но по делу.
-
-Вот сырой текст, который нужно отфильтровать:
-"{assistant_raw_text}"
-
-Переформатируй/почисти, чтобы пользователь получил итоговое сообщение:
-"""
-    )
-
-    # Складываем промпт и модель в "цепочку"
-    chain = filter_prompt | model_chat
-
-    # Запрашиваем у модели чистый текст
-    response = chain.invoke({"assistant_raw_text": raw_llm_output})
-
-    # Извлекаем текст из объекта AIMessage
-    if isinstance(response, AIMessage):
-        cleaned_text = response.content
-    else:
-        raise TypeError(f"Unexpected response type: {type(response)}")
-
-    return cleaned_text.strip()
-
-########################################
-
-system_message = {
-    "role": "system",
-    "content": """
-You are an intelligent assistant helping users find information about products in a database. You always communicate in Russian.
-
-1. Your main goal is to tell the user about the products with their prices found in the database at the user's request that the user needs.
-2. Refine the user's request in case you have too many suitable items in between.
-3. Inform about replenishment, creation, filling of the user's order cart.
-
-Mandatory rules for using tools to place an order to a user:
-1. When a user makes an initial request for a product of interest, always use the 'extract_parameters' tool to normalize the request.
-2. ALWAYS use the exact output - dict "params" from the 'extract_parameters' tool without modification when sending it to the 'rag_search_products' tool. This ensures consistency and prevents validation errors. Don't change **None** from the values of output dict from 'extract_parameters' tool to **null**.  
-3. When a user makes an initial query about products of interest, the initial semantic search with the 'rag_search_products' tool is performed on 'personal_collection'.
-4. If the number of matching results from the 'rag_search_products' tool is 0 in 'personal_collection' or 'temporary_collection', initiate a search with the 'rag_search_products' tool in 'price_list_collection'.
-5. If the number of matching results from the 'rag_search_products' tool is 0 in the 'price_list_collection', inform the user that the product is out of stock.
-6. If the number of matching results from the 'rag_search_products' tool is between 1 and 5 in any collection where you are searching, use the 'get_prices' tool. Once you have prices for the items found that match the user's query, offer them all to the user.
-7. If the number of matching results from the 'rag_search_products' tool is greater than 5 in any collection where you search, ask the user to specify 1 or 2 parameters that are null in the normalized form for the product of interest.
-8. After the user has refined some parameters, use the 'extract_parameters' tool to normalize the query again.
-9. After the user has refined some parameters and you have normalized them, initiate the 'merge_params' tool to combine the current non-null parameters with the ones the user has just refined.
-10. With the updated parameters after refinement, initiate the 'rag_search_products' tool with the 'temporary_collection' string as the second argument.
-11. Use the exact output from the 'merge_params' tool without modification when sending it to the 'rag_search_products' tool. This ensures consistency and prevents validation errors.
-12. Using 'add_to_cart' and 'calculate_total_price', based on the user's desires, assemble their shopping cart and give the order total.
-13. Once the user has added everything they want to the cart, use the 'determine_delivery_days' tool to determine the delivery day for each product in the user's cart based on their region and the current time of interaction.
-"""
-}
-
-# Define the tools available for the chatbot
-tools = [extract_parameters, rag_search_products, merge_params, get_prices, add_to_cart, calculate_total_price, determine_delivery_days]
-
-# Create the ReAct agent using the prebuilt function
-graph = create_react_agent(model, tools=tools)
-
 sticky_system_prompt = system_message
 chat_history = {}
 
+TELEGRAM_TOKEN = '7298645829:AAFXEewCSOzxh3Uppi07k-CGiJfsymambaU'
 
-
-bot = telebot.TeleBot('7298645829:AAFXEewCSOzxh3Uppi07k-CGiJfsymambaU')
-
-# Функция для поиска релевантных документов
-def retrieve(query, top_k=3):
-    retrieved_docs = []
-    return retrieved_docs
-
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 # Обработчик команды /start
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     welcome_text = (
-        "Здравствуйте! Это Кристина, Компания ВТД. Что бы вы хотели заказать?"
+        "Welcome to the car reservation chat! What city would you like to rent a car in and on what dates?"
     )
     bot.reply_to(message, welcome_text)
 
@@ -482,9 +421,9 @@ def handle_message(message):
     def send_intermediate():
         if not processing_done.is_set():
             try:
-                bot.reply_to(message, "Минуточку...")
+                bot.reply_to(message, "Wait a second...")
             except Exception as e:
-                print(f"DEBUG: Ошибка при отправке промежуточного сообщения: {e}")
+                print(f"DEBUG: Error when sending an intermediate message: {e}")
     # Запускаем таймер на 2 секунды
     timer = threading.Timer(2.0, send_intermediate)
     timer.start()
@@ -494,8 +433,8 @@ def handle_message(message):
         if user_id not in chat_history.keys():
             chat_history[user_id] = [system_message]
         # Получаем ввод пользователя
-        if user_input.lower() in ["завершить", "стоп", "выход"]:
-            bot.reply_to(message, "Спасибо за ваш заказ!")
+        if user_input.lower() in ["end", "thx", "thank you"]:
+            bot.reply_to(message, "Thank you! Bye!")
 
         # Добавляем сообщение пользователя в историю чата
         chat_history[user_id].append({"role": "user", "content": user_input})
@@ -531,8 +470,8 @@ def handle_message(message):
     except Exception as e:
         processing_done.set()
         timer.cancel()
-        print(f"DEBUG: Ошибка фильтрации ответа: {e}")
-        final_reply = "Извините, произошла ошибка при обработке ответа."
+        print(f"DEBUG: Response filtering error: {e}")
+        final_reply = "Sorry, there was an error processing the reply."
         bot.reply_to(message, final_reply)
 
 
