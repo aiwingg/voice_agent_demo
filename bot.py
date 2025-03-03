@@ -11,122 +11,136 @@ from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import tool
 from langchain import LLMChain, PromptTemplate
 from dotenv import load_dotenv
+from zoneinfo import ZoneInfo
+from timezonefinder import TimezoneFinder
+import requests
+from datetime import datetime
 
 ########################################
 # 1. Тестовые данные (пример из /api/Availability и т.д.)
 ########################################
 
-MOCK_AVAILABILITY_RESPONSE = [
-  {
+data = {
     "model": {
-      "id": 87,
-      "name": "Aygo",
-      "description": "Great choice for small family's",
-      "sipp": "EDMV",
-      "brand": "Toyota",
-      "category": {
-        "id": 1,
-        "order": 0,
-        "name": "Small"
-      },
-      "passangers": 4,
-      "doors": 5,
-      "transmissionType": "Manual",
-      "bigLuggage": 3,
-      "smallLuggage": 3,
-      "hasAirCondition": True,
-      "imagePath": "https://rently.blob.core.windows.net/sterling/CarModel/02984b25-ef7e-4713-8406-ecd97afbc0e7.png",
-      "franchise": 675,
-      "franchiseDamage": 675,
-      "franchiseRollover": 675,
-      "franchiseTheft": 675
+        "id": 87,
+        "name": "Aygo",
+        "description": "Great choice for small family's",
+        "sipp": "EDMV",
+        "brand": "Toyota",
+        "category": {"id": 1, "order": 0, "name": "Small"},
+        "passangers": 4,
+        "doors": 5,
+        "transmissionType": "Manual",
+        "bigLuggage": 3,
+        "smallLuggage": 3,
+        "hasAirCondition": True,
+        "imagePath": "https://rently.blob.core.windows.net/sterling/CarModel/02984b25-ef7e-4713-8406-ecd97afbc0e7.png",
+        "franchise": 675,
+        "franchiseDamage": 675,
+        "franchiseRollover": 675,
+        "franchiseTheft": 675
     },
     "supplier": {
-      "id": 9,
-      "name": "Street",
-      "logoPath": "https://rently.blob.core.windows.net/rently-network/operators/street.png",
-      "termsAndConditions": "Online payments accepted: Visa, Master, Amex",
-      "noShowCharge": 0.1,
-      "privacyPolicy": "https://www.streetrentacar.com/privacy-policy",
-      "disclaimer": "Example disclaimer",
-      "minAgeWithoutDriverFee": 18,
-      "maxAgeWithoutDriverFee": 65,
-      "minAgeToDrive": 17,
-      "maxAgeToDrive": 80
+        "id": 9,
+        "name": "Street",
+        "logoPath": "https://rently.blob.core.windows.net/rently-network/operators/street.png",
+        "termsAndConditions": "Online payments accepted: Visa, Master, Amex",
+        "noShowCharge": 0.1,
+        "privacyPolicy": "https://www.streetrentacar.com/privacy-policy",
+        "disclaimer": "Example disclaimer",
+        "minAgeWithoutDriverFee": 18,
+        "maxAgeWithoutDriverFee": 65,
+        "minAgeToDrive": 17,
+        "maxAgeToDrive": 80
     },
     "fromDate": "2022-03-13 11:00",
     "toDate": "2022-03-23 11:00",
     "deliveryPlace": {
-      "id": 1,
-      "country": "US",
-      "city": "Miami",
-      "phone": "+54 11 3582-9237",
-      "email": "reservas@streetrentacar.com",
-      "supplierId": 9,
-      "address": "Miami International Airport",
-      "type": "Office",
-      "serviceType": "Walking",
-      "iata": "EZE"
+        "id": 1,
+        "country": "US",
+        "city": "Miami",
+        "phone": "+54 11 3582-9237",
+        "email": "reservas@streetrentacar.com",
+        "supplierId": 9,
+        "address": "Miami International Airport",
+        "type": "Office",
+        "serviceType": "Walking",
+        "iata": "EZE"
     },
     "returnPlace": {
-      "id": 1,
-      "country": "US",
-      "city": "Miami",
-      "phone": "+54 11 3582-9237",
-      "email": "reservas@streetrentacar.com",
-      "supplierId": 9,
-      "address": "Miami International Airport",
-      "type": "Office",
-      "serviceType": "Walking",
-      "iata": "EZE"
+        "id": 1,
+        "country": "US",
+        "city": "Miami",
+        "phone": "+54 11 3582-9237",
+        "email": "reservas@streetrentacar.com",
+        "supplierId": 9,
+        "address": "Miami International Airport",
+        "type": "Office",
+        "serviceType": "Walking",
+        "iata": "EZE"
     },
     "totalDaysString": "10 days",
     "price": 272.55,
     "currency": "USD",
-    "ilimitedKm": True
-  }
+    "ilimitedKm": True,
+    "bookingId": "mock-booking-123",
+    "status": "confirmed",
+    "confirmationNumber": "CONF-999999",
+    "totalPrice": 272.55,
+    "createdAt": "2025-03-01T12:00:00Z",
+    "customerId": "cust001",
+    "carId": "car123",
+    "pickupLocation": "Miami International Airport",
+    "dropoffLocation": "Miami International Airport",
+    "pickupTime": "2025-03-10T10:00:00Z",
+    "dropoffTime": "2025-03-15T10:00:00Z",
+    "extras": {"gps": True, "childSeat": False},
+}
+
+
+MOCK_AVAILABILITY_RESPONSE = [
+    {
+        "model": data["model"],
+        "supplier": data["supplier"],
+        "fromDate": data['fromDate'],
+        "toDate": data["toDate"],
+        "deliveryPlace": data['deliveryPlace'],
+        "returnPlace": data['returnPlace'],
+        "totalDaysString": data['totalDaysString'],
+        "price": data["price"],
+        "currency": data['currency'],
+        "ilimitedKm": data['ilimitedKm']
+    }
 ]
 
 MOCK_CREATE_BOOKING_RESPONSE = {
-  "bookingId": "mock-booking-123",
-  "status": "confirmed",
-  "confirmationNumber": "CONF-999999",
-  "totalPrice": 272.55,
-  "currency": "USD",
-  "createdAt": "2025-03-01T12:00:00Z"
+    "bookingId": data['bookingId'],
+    "status": data['status'],
+    "confirmationNumber": data['confirmationNumber'],
+    "totalPrice": data['totalPrice'],
+    "currency": data['currency'],
+    "createdAt": data['createdAt']
 }
 
 MOCK_GET_BOOKING_RESPONSE = {
-  "bookingId": "mock-booking-123",
-  "customerId": "cust001",
-  "carId": "car123",
-  "pickupLocation": "Miami International Airport",
-  "dropoffLocation": "Miami International Airport",
-  "pickupTime": "2025-03-10T10:00:00Z",
-  "dropoffTime": "2025-03-15T10:00:00Z",
-  "status": "confirmed",
-  "extras": {
-    "gps": True,
-    "childSeat": False
-  },
-  "createdAt": "2025-03-01T12:00:00Z"
+    "bookingId": data['bookingId'],
+    "customerId": data['customerId'],
+    "carId": data['model']['id'],
+    "pickupLocation": data['deliveryPlace']["address"],
+    "dropoffLocation": data['returnPlace']["address"],
+    "pickupTime": data['pickupTime'],
+    "dropoffTime": data['dropoffTime'],
+    "status": data['status'],
+    "extras": data['extras'],
+    "createdAt": data['createdAt']
 }
 
-MOCK_UPDATE_BOOKING_RESPONSE = {
-  "bookingId": "mock-booking-123",
-  "status": "updated"
-}
-
-MOCK_CANCEL_BOOKING_RESPONSE = {
-  "bookingId": "mock-booking-123",
-  "status": "canceled"
-}
+MOCK_UPDATE_BOOKING_RESPONSE = {"bookingId": data['bookingId'], "status": data['status']}
+MOCK_CANCEL_BOOKING_RESPONSE = {"bookingId": data['bookingId'], "status": data['status']}
 
 ########################################
 # 2. Настройка OpenAI (пустая, т.к. нет реального ключа)
 ########################################
-
-load_dotenv()
 
 ########################################
 # Настройки и ключи
@@ -233,8 +247,14 @@ def create_booking(
     Returns:
         dict: Mocked booking response with bookingId, status, etc.
     """
-    # Возвращаем тестовый ответ
+    data['pickupLocation'] = pickupLocation
+    data['dropoffLocation'] = dropoffLocation
+    data['pickupTime'] = pickupTime
+    data['dropoffTime'] = dropoffTime
+    data['status'] = 'confirmed'
     return MOCK_CREATE_BOOKING_RESPONSE
+
+
 
 @tool
 def get_booking(bookingId: str) -> dict:
@@ -270,6 +290,9 @@ def update_booking(
     Returns:
         dict: Mocked response indicating success or error.
     """
+    data['pickupTime'] = pickupTime
+    data['dropoffTime'] = dropoffTime
+    data['status'] = 'updated'
     return MOCK_UPDATE_BOOKING_RESPONSE
 
 @tool
@@ -283,6 +306,7 @@ def cancel_booking(bookingId: str) -> dict:
     Returns:
         dict: Mocked response indicating cancellation or error.
     """
+    data['status'] = 'canceled'
     return MOCK_CANCEL_BOOKING_RESPONSE
 
 ########################################
