@@ -63,17 +63,16 @@ function App() {
   };
 
   // Start or restart the call by stopping any existing call first
-  const startOrRestartCall = async () => {
+  const startOrRestartCall = () => {
     try {
       if (callActive) {
         console.log("Stopping current call...");
-        setCallActive(true);
+        setCallActive(false);
         await retellClientRef.current.stopCall();
         // small delay to ensure call is fully stopped (optional)
         await new Promise(resolve => setTimeout(resolve, 500));
-      } else {
-            setCallActive(false);
-        }
+      }
+      setCallActive(true);
       console.log("Creating new web call...");
       const callData = await createWebCall();
       console.log("Call data:", callData);
