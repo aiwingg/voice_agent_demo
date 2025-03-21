@@ -89,7 +89,7 @@ function App() {
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>
-        Voice Agent Demo<br />for<br />Street Rent a Car
+        Voice Agent Demo<br />for<br />Thrifty car rental
       </h1>
       <button onClick={startOrRestartCall} style={styles.button}>
         {callActive ? "Restart Voice Agent" : "🎤 Start Voice Agent"}
