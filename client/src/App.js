@@ -12,12 +12,12 @@ function App() {
 
     client.on("call_started", () => {
       console.log("Call started");
-      setCallActive(true);
+//      setCallActive(true);
     });
 
     client.on("call_ended", () => {
       console.log("Call ended");
-      setCallActive(false);
+//      setCallActive(false);
     });
 
     client.on("agent_start_talking", () => {
@@ -67,10 +67,13 @@ function App() {
     try {
       if (callActive) {
         console.log("Stopping current call...");
+        setCallActive(true);
         await retellClientRef.current.stopCall();
         // small delay to ensure call is fully stopped (optional)
         await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      } else {
+            setCallActive(false);
+        }
       console.log("Creating new web call...");
       const callData = await createWebCall();
       console.log("Call data:", callData);
