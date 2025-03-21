@@ -63,7 +63,7 @@ function App() {
   };
 
   // Start or restart the call by stopping any existing call first
-  const startOrRestartCall = () => {
+  const startOrRestartCall = async () => {
     try {
       if (callActive) {
         console.log("Stopping current call...");
