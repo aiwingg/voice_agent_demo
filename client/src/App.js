@@ -225,7 +225,7 @@ function App() {
       <div style={styles.card}>
         <h1 style={styles.title}>Voice Agent Demo<br />for<br />Thrifty Car Rental</h1>
         <button onClick={startOrRestartCall} className="call-button" style={styles.button}>
-          {callActive ? '🎤 Перезапустить голосового агента' : '🎤 Запустить голосового агента'}
+          {callActive ? '🎤 Restart Voice Agent' : '🎤 Start Voice Agent'}
         </button>
       </div>
     </div>
