@@ -223,7 +223,7 @@ function App() {
       `}</style>
 
       <div style={styles.card}>
-        <h1 style={styles.title}>Голосовой Агент<br />ВТД<</h1>
+        <h1 style={styles.title}>Голосовой Агент<br />ВТД</h1>
         <button onClick={startOrRestartCall} className="call-button" style={styles.button}>
           {callActive ? '🎤 Перезапустить Голосового Агента' : '🎤 Запустить Голосового Агента'}
         </button>
