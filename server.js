@@ -20,7 +20,11 @@ app.post('/api/create-web-call', async (req, res) => {
     const webCallResponse = await retellClient.call.createWebCall({
       agent_id: AGENT_ID,
       metadata: { demo: true },
-      retell_llm_dynamic_variables: {},
+      retell_llm_dynamic_variables: {
+        'user_number': '9280291870',
+        'name': 'Крокус ООО',
+        'purchase_history': '- Филе ЦБ 15кг мон зам Благояр (339.2 руб / кг) [ЦБ-00001549]\n - Филе ЦБ Халяль "Для жарки" мон зам Благояр (342.38 руб / кг) [01-00003115]\n - Филе ЦБ Халяль мон зам Чагулов ИП (311.0 руб / кг) [01-00012701]\n - 1 сорт Тушка ЦБ пак зам Благояр (180.2 руб / кг) [00-00000028]\n - 1 сорт Тушка ЦБ 1,7 кг Халяль пак зам АН-НУР (192.92 руб / кг) [01-00003181]'
+      },
     });
     res.status(201).json(webCallResponse);
   } catch (error) {
