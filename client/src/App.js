@@ -3,10 +3,17 @@ import { RetellWebClient } from 'retell-client-js-sdk';
 
 function App() {
   const [callActive, setCallActive] = useState(false);
+  const [telegramId, setTelegramId] = useState('');
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
+    // Extract Telegram ID from URL parameters when component mounts
+    const urlParams = new URLSearchParams(window.location.search);
+    const tgId = urlParams.get('tgid') || '';
+    setTelegramId(tgId);
+    console.log('Extracted Telegram ID:', tgId);
+    
     // Initialize the Retell client
     retellClientRef.current = new RetellWebClient();
     const client = retellClientRef.current;
@@ -49,7 +56,10 @@ function App() {
       const response = await fetch('/api/create-web-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metadata: { demo: true } }),
+        body: JSON.stringify({ 
+          metadata: { demo: true },
+          telegramId: telegramId  // Send the Telegram ID to the server
+        }),
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -224,9 +234,18 @@ function App() {
 
       <div style={styles.card}>
         <h1 style={styles.title}>Голосовой Агент<br />ВТД</h1>
-        <button onClick={startOrRestartCall} className="call-button" style={styles.button}>
-          {callActive ? '🎤 Перезапустить Голосового Агента' : '🎤 Запустить Голосового Агента'}
-        </button>
+        {telegramId ? (
+          <button onClick={startOrRestartCall} className="call-button" style={styles.button}>
+            {callActive ? '🎤 Перезапустить Голосового Агента' : '🎤 Запустить Голосового Агента'}
+          </button>
+        ) : (
+          <div>
+            <p style={styles.warningText}>Отсутствует ID Telegram. Пожалуйста, откройте через Telegram.</p>
+            <button onClick={startOrRestartCall} className="call-button" style={{...styles.button, opacity: 0.7}}>
+              🎤 Тестовый запуск
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -268,6 +287,11 @@ const styles = {
     color: '#fff',
     boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
     transition: 'transform 0.2s, box-shadow 0.2s',
+  },
+  warningText: {
+    color: '#e74c3c',
+    marginBottom: '15px',
+    fontSize: '1rem'
   },
 };
 
