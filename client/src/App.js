@@ -93,7 +93,104 @@ function App() {
       </div>
 
       <style>{`
-        /* ваши keyframes и стили объектов остаются без изменений */
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .call-button:hover {
+          transform: scale(1.03);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .dynamic-background {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          overflow: hidden;
+          pointer-events: none;
+        }
+        .object {
+          position: absolute;
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 50%;
+        }
+        /* Animation keyframes */
+        @keyframes moveRight {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(100vw); }
+        }
+        @keyframes moveLeft {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-100vw); }
+        }
+        @keyframes rotateAndMove {
+          0% { transform: rotate(0deg) translateX(0); }
+          100% { transform: rotate(360deg) translateX(100vw); }
+        }
+        @keyframes floatUpDown {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
+        @keyframes squareMove {
+          0% { transform: translateX(0); }
+          50% { transform: translateX(20px); }
+          100% { transform: translateX(0); }
+        }
+        @keyframes triangleMove {
+          0% { transform: translateY(0); }
+          50% { transform: translateY(-15px); }
+          100% { transform: translateY(0); }
+        }
+        @keyframes circleBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
+        /* Object styles with animations */
+        .object1 {
+          width: 50px;
+          height: 50px;
+          animation-name: moveRight;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
+        .object2 {
+          width: 30px;
+          height: 30px;
+          animation-name: moveLeft;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
+        .object3 {
+          width: 70px;
+          height: 70px;
+          animation-name: rotateAndMove;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
+        .object4 {
+          width: 40px;
+          height: 40px;
+          animation-name: floatUpDown;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+        }
+        .object5 {
+          width: 60px;
+          height: 60px;
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 10px;
+          animation-name: squareMove;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
+        .object7 {
+          width: 40px;
+          height: 40px;
+          animation-name: circleBounce;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+        }
       `}</style>
 
       <div style={styles.card}>
@@ -119,19 +216,45 @@ function App() {
 
 const styles = {
   appContainer: {
-    /* ...ваши стили... */
+    position: 'relative',
+    height: '100vh',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    background: 'radial-gradient(circle at center, rgba(255,255,255,0.1), transparent 70%), linear-gradient(135deg, #0044CC, #0056D2)',
+    backgroundBlendMode: 'overlay',
+    fontFamily: "'Montserrat', sans-serif",
   },
   card: {
-    /* ...ваши стили... */
+    background: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: '15px',
+    padding: '40px 60px',
+    boxShadow: '0 15px 35px rgba(0, 0, 0, 0.2)',
+    textAlign: 'center',
+    animation: 'fadeIn 1s ease-in-out',
+    zIndex: 1
   },
   title: {
-    /* ...ваши стили... */
+    fontSize: '2.5rem',
+    marginBottom: '20px',
+    color: '#333',
+    textShadow: '1px 1px 3px rgba(0,0,0,0.2)',
   },
   button: {
-    /* ...ваши стили... */
+    fontSize: '1.2rem',
+    padding: '15px 30px',
+    borderRadius: '30px',
+    border: 'none',
+    cursor: 'pointer',
+    background: 'linear-gradient(90deg, #0044CC, #0056D2)',
+    color: '#fff',
+    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+    transition: 'transform 0.2s, box-shadow 0.2s',
   },
   warningText: {
-    /* ...ваши стили... */
+    color: '#e74c3c',
+    marginBottom: '15px',
+    fontSize: '1rem'
   },
 };
 
