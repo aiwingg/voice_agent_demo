@@ -4,6 +4,7 @@ import { RetellWebClient } from 'retell-client-js-sdk';
 function App() {
   const [callActive, setCallActive] = useState(false);
   const [telegramId, setTelegramId] = useState('');
+  const [manualTelegramId, setManualTelegramId] = useState('');
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
 
@@ -72,6 +73,13 @@ function App() {
       console.error('Error starting/restarting call:', err);
     } finally {
       isProcessingRef.current = false;
+    }
+  };
+
+  const handleManualIdSubmit = (e) => {
+    e.preventDefault();
+    if (manualTelegramId.trim()) {
+      setTelegramId(manualTelegramId.trim());
     }
   };
 
@@ -202,8 +210,20 @@ function App() {
         ) : (
           <div>
             <p style={styles.warningText}>
-              Отсутствует ID Telegram. Пожалуйста, откройте через Telegram.
+              Отсутствует ID Telegram. Пожалуйста, введите ID вручную или откройте через Telegram.
             </p>
+            <form onSubmit={handleManualIdSubmit} style={styles.form}>
+              <input
+                type="text"
+                value={manualTelegramId}
+                onChange={(e) => setManualTelegramId(e.target.value)}
+                placeholder="Введите Telegram ID"
+                style={styles.input}
+              />
+              <button type="submit" style={styles.submitButton}>
+                Подтвердить
+              </button>
+            </form>
             <button onClick={startOrRestartCall} className="call-button" style={{ ...styles.button, opacity: 0.7 }}>
               🎤 Тестовый запуск
             </button>
@@ -255,6 +275,33 @@ const styles = {
     color: '#e74c3c',
     marginBottom: '15px',
     fontSize: '1rem'
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    marginBottom: '15px',
+  },
+  input: {
+    padding: '12px',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+    fontSize: '1rem',
+    outline: 'none',
+    transition: 'border-color 0.3s',
+  },
+  submitButton: {
+    padding: '12px',
+    borderRadius: '8px',
+    border: 'none',
+    background: '#0044CC',
+    color: 'white',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s',
+  },
+  submitButtonHover: {
+    background: '#0056D2',
   },
 };
 
