@@ -5,6 +5,7 @@ function App() {
   const [callActive, setCallActive] = useState(false);
   const [telegramId, setTelegramId] = useState('');
   const [manualTelegramId, setManualTelegramId] = useState('');
+  const [hasMicrophonePermission, setHasMicrophonePermission] = useState(false);
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
 
@@ -80,6 +81,16 @@ function App() {
     e.preventDefault();
     if (manualTelegramId.trim()) {
       setTelegramId(manualTelegramId.trim());
+    }
+  };
+
+  const requestMicrophonePermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // Stop the stream immediately after getting permission
+      setHasMicrophonePermission(true);
+    } catch (error) {
+      setHasMicrophonePermission(false);
     }
   };
 
@@ -204,9 +215,24 @@ function App() {
       <div style={styles.card}>
         <h1 style={styles.title}>Голосовой Агент<br />ВТД</h1>
         {telegramId ? (
-          <button onClick={startOrRestartCall} className="call-button" style={styles.button}>
-            {callActive ? '🎤 Перезапустить Голосового Агента' : '🎤 Запустить Голосового Агента'}
-          </button>
+          <>
+            {!hasMicrophonePermission && (
+              <button 
+                onClick={requestMicrophonePermission} 
+                style={styles.permissionButton}
+              >
+                🎤 Разрешить использование микрофона
+              </button>
+            )}
+            <button 
+              onClick={startOrRestartCall} 
+              className="call-button" 
+              style={{...styles.button, opacity: hasMicrophonePermission ? 1 : 0.5}}
+              disabled={!hasMicrophonePermission}
+            >
+              {callActive ? '🎤 Перезапустить Голосового Агента' : '🎤 Запустить Голосового Агента'}
+            </button>
+          </>
         ) : (
           <div>
             <p style={styles.warningText}>
@@ -252,24 +278,17 @@ const styles = {
     boxShadow: '0 15px 35px rgba(0, 0, 0, 0.2)',
     textAlign: 'center',
     animation: 'fadeIn 1s ease-in-out',
-    zIndex: 1
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: '2.5rem',
     marginBottom: '20px',
     color: '#333',
     textShadow: '1px 1px 3px rgba(0,0,0,0.2)',
-  },
-  button: {
-    fontSize: '1.2rem',
-    padding: '15px 30px',
-    borderRadius: '30px',
-    border: 'none',
-    cursor: 'pointer',
-    background: 'linear-gradient(90deg, #0044CC, #0056D2)',
-    color: '#fff',
-    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-    transition: 'transform 0.2s, box-shadow 0.2s',
   },
   warningText: {
     color: '#e74c3c',
@@ -302,6 +321,29 @@ const styles = {
   },
   submitButtonHover: {
     background: '#0056D2',
+  },
+  button: {
+    fontSize: '1.2rem',
+    padding: '15px 30px',
+    borderRadius: '30px',
+    border: 'none',
+    cursor: 'pointer',
+    background: 'linear-gradient(90deg, #0044CC, #0056D2)',
+    color: '#fff',
+    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+  },
+  permissionButton: {
+    fontSize: '1.2rem',
+    padding: '15px 30px',
+    borderRadius: '30px',
+    border: 'none',
+    cursor: 'pointer',
+    background: 'linear-gradient(90deg, #FF6B6B, #FF8E8E)',
+    color: '#fff',
+    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+    marginBottom: '15px',
   },
 };
 
