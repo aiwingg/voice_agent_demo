@@ -232,6 +232,7 @@ function App() {
   );
 }
 
+
 const styles = {
   appContainer: {
     position: 'relative',
