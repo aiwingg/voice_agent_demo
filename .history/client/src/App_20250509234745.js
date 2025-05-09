@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
-import { COMPANIES, DEFAULT_COMPANY_NAME, DEFAULT_LANGUAGE } from './config';
 
 // Language translations
 const translations = {
@@ -49,8 +48,8 @@ function App() {
   const [agentStatus, setAgentStatus] = useState('idle'); // idle, listening, speaking
   const [micPermission, setMicPermission] = useState('unknown'); // unknown, granted, denied
   const [companyId, setCompanyId] = useState(null);
-  const [companyName, setCompanyName] = useState(DEFAULT_COMPANY_NAME);
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
+  const [companyName, setCompanyName] = useState('МТТ');
+  const [language, setLanguage] = useState('ru');
   const [showInvalidCompanyAlert, setShowInvalidCompanyAlert] = useState(false);
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
@@ -60,22 +59,8 @@ function App() {
     const queryParams = new URLSearchParams(window.location.search);
     const companyIdParam = queryParams.get('company_id');
     console.log('companyIdParam', companyIdParam);
-    
     if (companyIdParam) {
       setCompanyId(companyIdParam);
-      
-      // Immediately update company info based on the company ID
-      if (COMPANIES[companyIdParam]) {
-        const [_, companyLanguage, companyDisplayName] = COMPANIES[companyIdParam];
-        setLanguage(companyLanguage);
-        setCompanyName(companyDisplayName);
-      } else if (companyIdParam) {
-        // Invalid company ID
-        setShowInvalidCompanyAlert(true);
-        setTimeout(() => {
-          setShowInvalidCompanyAlert(false);
-        }, 5000);
-      }
     }
 
     // Check if microphone permission is already granted
@@ -174,19 +159,23 @@ function App() {
           company_id: companyId 
         }),
       });
-      console.log('response', response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       
-      // We don't need to set these values here anymore since we're already setting them
-      // from the URL parameters, but we'll keep this as a fallback
+      // Process metadata from response
       if (data.metadata) {
-        // Only update if these values weren't already set from URL parameters
-        if (!companyId && data.metadata.company_name !== companyName) {
-          setLanguage(data.metadata.language);
-          setCompanyName(data.metadata.company_name);
+        setLanguage(data.metadata.language);
+        setCompanyName(data.metadata.company_name);
+        
+        if (!data.metadata.valid_company && companyId) {
+          setShowInvalidCompanyAlert(true);
+          
+          // Hide the alert after 5 seconds
+          setTimeout(() => {
+            setShowInvalidCompanyAlert(false);
+          }, 5000);
         }
       }
       

@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const Retell = require('retell-sdk'); // Using the Node SDK for Retell
-const { COMPANIES, DEFAULT_AGENT_ID, DEFAULT_LANGUAGE, DEFAULT_COMPANY_NAME } = require('./config');
 
 const app = express();
 
@@ -13,14 +12,23 @@ app.use(bodyParser.json());
 
 // Your API endpoint to create a web call
 const API_KEY = 'key_7335fefc4661ce2fd9f790780ad5';
+const DEFAULT_AGENT_ID = 'agent_d1b78ff3f73322fc34dd89abb5';
+
+// Company to agent mapping
+// Format: {company_id: [agent_id, language, company_name]}
+const COMPANIES = {
+  '123': ['agent_d1b78ff3f73322fc34dd89abb5', 'ru', 'Крокус ООО'],
+  '456': ['agent_d1b78ff3f73322fc34dd89abb5', 'en', 'Flower Tech'],
+  '789': ['agent_d1b78ff3f73322fc34dd89abb5', 'ru', 'ТД Восток']
+};
 
 app.post('/api/create-web-call', async (req, res) => {
   try {
     // Get company ID from request body, or use default if not provided
     const { company_id } = req.body;
     let agent_id = DEFAULT_AGENT_ID;
-    let language = DEFAULT_LANGUAGE;
-    let company_name = DEFAULT_COMPANY_NAME;
+    let language = 'ru';
+    let company_name = 'МТТ';
     let valid_company = true;
 
     // Check if company_id exists and is valid

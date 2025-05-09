@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
-import { COMPANIES, DEFAULT_COMPANY_NAME, DEFAULT_LANGUAGE } from './config';
+
+// Company mapping - same structure as on the server
+// Format: {company_id: [agent_id, language, company_name]}
+const COMPANIES = {
+  '123': ['agent_d1b78ff3f73322fc34dd89abb5', 'ru', 'Крокус ООО'],
+  '456': ['agent_d1b78ff3f73322fc34dd89abb5', 'en', 'Flower Tech'],
+  '789': ['agent_d1b78ff3f73322fc34dd89abb5', 'ru', 'ТД Восток']
+};
 
 // Language translations
 const translations = {
@@ -49,8 +56,8 @@ function App() {
   const [agentStatus, setAgentStatus] = useState('idle'); // idle, listening, speaking
   const [micPermission, setMicPermission] = useState('unknown'); // unknown, granted, denied
   const [companyId, setCompanyId] = useState(null);
-  const [companyName, setCompanyName] = useState(DEFAULT_COMPANY_NAME);
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
+  const [companyName, setCompanyName] = useState('МТТ');
+  const [language, setLanguage] = useState('ru');
   const [showInvalidCompanyAlert, setShowInvalidCompanyAlert] = useState(false);
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);

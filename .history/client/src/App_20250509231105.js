@@ -1,86 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
-import { COMPANIES, DEFAULT_COMPANY_NAME, DEFAULT_LANGUAGE } from './config';
-
-// Language translations
-const translations = {
-  en: {
-    title: 'Voice Agent',
-    micPermissionButton: {
-      unknown: '🎤 Allow microphone access',
-      granted: '🎤 Microphone access allowed',
-      denied: '❌ Microphone access denied'
-    },
-    callButton: {
-      start: '🎤 Start Voice Agent',
-      restart: '🎤 Restart Voice Agent'
-    },
-    agentStatus: {
-      speaking: 'Agent is speaking',
-      listening: 'Agent is listening',
-      connecting: 'Connecting...',
-      idle: 'Not active'
-    },
-    invalidCompany: 'Invalid company ID. Using default agent.'
-  },
-  ru: {
-    title: 'Голосовой Агент',
-    micPermissionButton: {
-      unknown: '🎤 Разрешить доступ к микрофону',
-      granted: '🎤 Доступ к микрофону разрешен',
-      denied: '❌ Доступ к микрофону запрещен'
-    },
-    callButton: {
-      start: '🎤 Запустить Голосового Агента',
-      restart: '🎤 Перезапустить Голосового Агента'
-    },
-    agentStatus: {
-      speaking: 'Агент говорит',
-      listening: 'Агент слушает',
-      connecting: 'Подключение...',
-      idle: 'Не активен'
-    },
-    invalidCompany: 'Неверный ID компании. Используется агент по умолчанию.'
-  }
-};
 
 function App() {
   const [callActive, setCallActive] = useState(false);
   const [agentStatus, setAgentStatus] = useState('idle'); // idle, listening, speaking
-  const [micPermission, setMicPermission] = useState('unknown'); // unknown, granted, denied
-  const [companyId, setCompanyId] = useState(null);
-  const [companyName, setCompanyName] = useState(DEFAULT_COMPANY_NAME);
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
-  const [showInvalidCompanyAlert, setShowInvalidCompanyAlert] = useState(false);
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
-    // Get company_id from URL query parameters
-    const queryParams = new URLSearchParams(window.location.search);
-    const companyIdParam = queryParams.get('company_id');
-    console.log('companyIdParam', companyIdParam);
-    
-    if (companyIdParam) {
-      setCompanyId(companyIdParam);
-      
-      // Immediately update company info based on the company ID
-      if (COMPANIES[companyIdParam]) {
-        const [_, companyLanguage, companyDisplayName] = COMPANIES[companyIdParam];
-        setLanguage(companyLanguage);
-        setCompanyName(companyDisplayName);
-      } else if (companyIdParam) {
-        // Invalid company ID
-        setShowInvalidCompanyAlert(true);
-        setTimeout(() => {
-          setShowInvalidCompanyAlert(false);
-        }, 5000);
-      }
-    }
-
-    // Check if microphone permission is already granted
-    checkMicrophonePermission();
-    
     // Initialize the Retell client
     retellClientRef.current = new RetellWebClient();
     const client = retellClientRef.current;
@@ -123,74 +50,18 @@ function App() {
     };
   }, []);
 
-  // Check if microphone permission is already granted
-  const checkMicrophonePermission = async () => {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioInputs = devices.filter(device => device.kind === 'audioinput');
-      
-      if (audioInputs.length > 0) {
-        // Check if we have label information, which indicates permission is granted
-        if (audioInputs[0].label) {
-          setMicPermission('granted');
-        } else {
-          setMicPermission('unknown');
-        }
-      } else {
-        setMicPermission('unknown');
-      }
-    } catch (error) {
-      console.error('Error checking microphone permission:', error);
-      setMicPermission('unknown');
-    }
-  };
-
-  // Request microphone access explicitly
-  const requestMicrophoneAccess = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // If we get here, permission was granted
-      setMicPermission('granted');
-      
-      // Stop all tracks to release the microphone
-      stream.getTracks().forEach(track => track.stop());
-      
-      console.log('Microphone access granted');
-    } catch (error) {
-      console.error('Microphone access denied:', error);
-      setMicPermission('denied');
-    }
-  };
-
   // Fetch the web call token from your own server endpoint
   const createWebCall = async () => {
     try {
-      const response = await fetch('/api/create-web-call', {
+      const response = await fetch('localhost:3000/api/create-web-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          metadata: { demo: true },
-          company_id: companyId 
-        }),
+        body: JSON.stringify({ metadata: { demo: true } }),
       });
-      console.log('response', response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      
-      // We don't need to set these values here anymore since we're already setting them
-      // from the URL parameters, but we'll keep this as a fallback
-      if (data.metadata) {
-        // Only update if these values weren't already set from URL parameters
-        if (!companyId && data.metadata.company_name !== companyName) {
-          setLanguage(data.metadata.language);
-          setCompanyName(data.metadata.company_name);
-        }
-      }
-      
-      return data;
+      return await response.json();
     } catch (error) {
       console.error('Error creating web call on server:', error);
       throw error;
@@ -288,38 +159,16 @@ function App() {
 
   // Get status text based on current status
   const getStatusText = () => {
-    const text = translations[language].agentStatus[agentStatus];
-    return text || translations[language].agentStatus.idle;
-  };
-
-  // Get microphone button text based on permission status
-  const getMicButtonText = () => {
-    return translations[language].micPermissionButton[micPermission];
-  };
-
-  // Get microphone button style based on permission status
-  const getMicButtonStyle = () => {
-    switch (micPermission) {
-      case 'granted':
-        return { ...styles.micButton, background: 'linear-gradient(90deg, #4caf50, #2e7d32)' };
-      case 'denied':
-        return { ...styles.micButton, background: 'linear-gradient(90deg, #f44336, #d32f2f)' };
+    switch (agentStatus) {
+      case 'speaking':
+        return 'Агент говорит';
+      case 'listening':
+        return 'Агент слушает';
+      case 'connecting':
+        return 'Подключение...';
       default:
-        return { ...styles.micButton, background: 'linear-gradient(90deg, #9e9e9e, #616161)' };
+        return 'Не активен';
     }
-  };
-
-  // Render the invalid company alert if needed
-  const renderInvalidCompanyAlert = () => {
-    if (!showInvalidCompanyAlert) return null;
-    
-    return (
-      <div style={styles.alertContainer}>
-        <div style={styles.alert}>
-          {translations[language].invalidCompany}
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -482,52 +331,23 @@ function App() {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 1; }
         }
-        
-        /* Alert animation */
-        @keyframes alertFadeIn {
-          0% { opacity: 0; transform: translateY(-20px); }
-          10% { opacity: 1; transform: translateY(0); }
-          90% { opacity: 1; }
-          100% { opacity: 0; }
-        }
       `}</style>
-
-      {renderInvalidCompanyAlert()}
 
       <div style={styles.card}>
         <h1 style={styles.title}>
-          <span style={styles.logo}>{companyName}</span>
-          <span style={styles.titleText}>{translations[language].title}</span>
+          <span style={styles.logo}>МТТ</span>
+          <span style={styles.titleText}>Голосовой Агент</span>
         </h1>
         
         {renderStatusIndicator()}
         
-        <button 
-          onClick={requestMicrophoneAccess} 
-          className="call-button" 
-          style={getMicButtonStyle()}
-          disabled={micPermission === 'granted'}
-        >
-          {getMicButtonText()}
-        </button>
-        
-        <button 
-          onClick={startOrRestartCall} 
-          className="call-button" 
-          style={{
-            ...styles.button,
-            background: callActive 
-              ? 'linear-gradient(90deg, #d32f2f, #f44336)' 
-              : 'linear-gradient(90deg, #0044CC, #0056D2)',
-            marginTop: '15px',
-            opacity: micPermission !== 'granted' ? 0.7 : 1,
-          }}
-          disabled={micPermission !== 'granted'}
-        >
-          {callActive 
-            ? translations[language].callButton.restart
-            : translations[language].callButton.start
-          }
+        <button onClick={startOrRestartCall} className="call-button" style={{
+          ...styles.button,
+          background: callActive 
+            ? 'linear-gradient(90deg, #d32f2f, #f44336)' 
+            : 'linear-gradient(90deg, #0044CC, #0056D2)'
+        }}>
+          {callActive ? '🎤 Перезапустить Голосового Агента' : '🎤 Запустить Голосового Агента'}
         </button>
       </div>
     </div>
@@ -587,17 +407,6 @@ const styles = {
     marginTop: '20px',
     fontWeight: '500',
   },
-  micButton: {
-    fontSize: '1.1rem',
-    padding: '12px 25px',
-    borderRadius: '30px',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#fff',
-    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-    transition: 'transform 0.2s, box-shadow 0.2s, background 0.3s',
-    width: '100%',
-  },
   statusContainer: {
     display: 'flex',
     flexDirection: 'column',
@@ -642,26 +451,6 @@ const styles = {
     borderRadius: '50%',
     animation: 'connecting 1.5s infinite ease-in-out',
   },
-  alertContainer: {
-    position: 'fixed',
-    top: '20px',
-    left: 0,
-    right: 0,
-    display: 'flex',
-    justifyContent: 'center',
-    zIndex: 10,
-    animation: 'alertFadeIn 5s forwards',
-  },
-  alert: {
-    background: 'rgba(253, 236, 234, 0.9)',
-    border: '1px solid #f44336',
-    borderRadius: '6px',
-    padding: '12px 20px',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-    color: '#d32f2f',
-    maxWidth: '90%',
-    backdropFilter: 'blur(5px)',
-  }
 };
 
 export default App;
