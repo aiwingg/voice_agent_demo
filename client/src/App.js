@@ -6,6 +6,7 @@ function App() {
   const [telegramId, setTelegramId] = useState('');
   const [manualTelegramId, setManualTelegramId] = useState('');
   const [hasMicrophonePermission, setHasMicrophonePermission] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
 
@@ -63,6 +64,7 @@ function App() {
         await new Promise(r => setTimeout(r, 500));
       }
       setCallActive(true);
+      setIsMuted(false); // Reset mute state on new call
       const callData = await createWebCall();
       await retellClientRef.current.startCall({
         accessToken: callData.access_token,
@@ -91,6 +93,17 @@ function App() {
       setHasMicrophonePermission(true);
     } catch (error) {
       setHasMicrophonePermission(false);
+    }
+  };
+
+  const handleMuteToggle = () => {
+    if (!retellClientRef.current) return;
+    if (!isMuted) {
+      retellClientRef.current.mute();
+      setIsMuted(true);
+    } else {
+      retellClientRef.current.unmute();
+      setIsMuted(false);
     }
   };
 
@@ -232,6 +245,14 @@ function App() {
             >
               {callActive ? '🎤 Перезапустить Голосового Агента' : '🎤 Запустить Голосового Агента'}
             </button>
+            {callActive && hasMicrophonePermission && (
+              <button
+                onClick={handleMuteToggle}
+                style={{ ...styles.button, marginTop: 10, background: isMuted ? 'linear-gradient(90deg, #FF6B6B, #FF8E8E)' : 'linear-gradient(90deg, #0044CC, #0056D2)' }}
+              >
+                {isMuted ? '🔊 Включить микрофон' : '🔇 Отключить микрофон'}
+              </button>
+            )}
           </>
         ) : (
           <div>
