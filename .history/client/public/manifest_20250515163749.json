@@ -1,6 +1,6 @@
 {
-  "short_name": "SycoraxAI",
-  "name": "SycoraxAI | AI Voice Agent Demo",
+  "short_name": "Voice Agent",
+  "name": "AI Voice Agent Demo",
   "icons": [
     {
       "src": "favicon.ico",

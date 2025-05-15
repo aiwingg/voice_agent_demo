@@ -1,6 +1,6 @@
 {
-  "short_name": "SycoraxAI",
-  "name": "SycoraxAI | AI Voice Agent Demo",
+  "short_name": "React App",
+  "name": "Create React App Sample",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,10 +20,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#4CAF50",
-  "background_color": "#ffffff",
-  "description": "Experience natural conversations with our virtual assistant. Start a voice conversation in multiple languages.",
-  "orientation": "portrait",
-  "categories": ["productivity", "utilities"],
-  "lang": "en"
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
 }
