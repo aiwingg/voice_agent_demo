@@ -374,7 +374,7 @@ function App() {
 
       <div style={styles.cardContainer}>
         <div style={styles.header}>
-          <h1 style={styles.title}>{companyName}</h1>
+          <h1 style={styles.title}>{COMPANIES[companyId]}</h1>
           <p style={styles.subtitle}>{translations[language].subtitle}</p>
         </div>
       </div>
