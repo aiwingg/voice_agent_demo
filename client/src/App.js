@@ -5,15 +5,19 @@ import { COMPANIES, DEFAULT_COMPANY_NAME, DEFAULT_LANGUAGE } from './config';
 // Language translations
 const translations = {
   en: {
-    title: 'Voice Agent',
+    title: 'Voice Agent Demo',
+    subtitle: 'Virtual Agent Assistant',
+    sectionTitle: 'Start Voice Conversation',
+    sectionDescription: 'Click the button below to start talking with our AI voice agent',
     micPermissionButton: {
-      unknown: '🎤 Allow microphone access',
-      granted: '🎤 Microphone access allowed',
-      denied: '❌ Microphone access denied'
+      unknown: 'Allow microphone access',
+      granted: 'Microphone access allowed',
+      denied: 'Microphone access denied'
     },
     callButton: {
-      start: '🎤 Start Voice Agent',
-      restart: '🎤 Restart Voice Agent'
+      start: 'Start Conversation',
+      restart: 'Restart Conversation',
+      end: 'End Call'
     },
     agentStatus: {
       speaking: 'Agent is speaking',
@@ -21,18 +25,31 @@ const translations = {
       connecting: 'Connecting...',
       idle: 'Not active'
     },
-    invalidCompany: 'Invalid company ID. Using default agent.'
+    invalidCompany: 'Invalid company ID. Using default agent.',
+    howItWorks: {
+      title: 'How it works',
+      steps: [
+        'Click the button to start a conversation with our AI voice agent',
+        'Speak naturally as you would in a normal conversation',
+        'The visual indicator will show if the agent is speaking or listening',
+        'Click the end call button when you\'re finished'
+      ]
+    }
   },
   ru: {
     title: 'Голосовой Агент',
+    subtitle: 'Виртуальный Голосовой Помощник',
+    sectionTitle: 'Начать Голосовую Беседу',
+    sectionDescription: 'Нажмите кнопку ниже, чтобы начать разговор с нашим ИИ голосовым агентом',
     micPermissionButton: {
-      unknown: '🎤 Разрешить доступ к микрофону',
-      granted: '🎤 Доступ к микрофону разрешен',
-      denied: '❌ Доступ к микрофону запрещен'
+      unknown: 'Разрешить доступ к микрофону',
+      granted: 'Доступ к микрофону разрешен',
+      denied: 'Доступ к микрофону запрещен'
     },
     callButton: {
-      start: '🎤 Запустить Голосового Агента',
-      restart: '🎤 Перезапустить Голосового Агента'
+      start: 'Начать Разговор',
+      restart: 'Перезапустить Разговор',
+      end: 'Завершить Звонок'
     },
     agentStatus: {
       speaking: 'Агент говорит',
@@ -40,7 +57,16 @@ const translations = {
       connecting: 'Подключение...',
       idle: 'Не активен'
     },
-    invalidCompany: 'Неверный ID компании. Используется агент по умолчанию.'
+    invalidCompany: 'Неверный ID компании. Используется агент по умолчанию.',
+    howItWorks: {
+      title: 'Как это работает',
+      steps: [
+        'Нажмите кнопку, чтобы начать разговор с нашим ИИ голосовым агентом',
+        'Говорите естественно, как при обычном разговоре',
+        'Визуальный индикатор покажет, говорит ли агент или слушает',
+        'Нажмите кнопку завершения звонка, когда закончите'
+      ]
+    }
   }
 };
 
@@ -226,8 +252,28 @@ function App() {
     } catch (error) {
       console.error('Error starting/restarting call:', error);
       setAgentStatus('idle');
+      setCallActive(false);
     } finally {
       isProcessingRef.current = false;
+    }
+  };
+
+  // Handle call button click based on the current state
+  const handleCallButtonClick = () => {
+    if (micPermission !== 'granted') {
+      requestMicrophoneAccess();
+    } else {
+      startOrRestartCall();
+    }
+  };
+
+  // End the call
+  const endCall = async () => {
+    if (callActive) {
+      console.log('Ending call...');
+      setCallActive(false);
+      setAgentStatus('idle');
+      await retellClientRef.current.stopCall();
     }
   };
 
@@ -235,78 +281,16 @@ function App() {
   const renderStatusIndicator = () => {
     if (!callActive) return null;
 
-    let indicatorStyles = {
-      ...styles.statusIndicator,
-      background: getStatusColor(),
-    };
-
     return (
-      <div style={styles.statusContainer}>
-        <div style={indicatorStyles}>
-          {agentStatus === 'speaking' ? (
-            <div style={styles.speakingAnimation}>
-              <div className="speaking-bar"></div>
-              <div className="speaking-bar"></div>
-              <div className="speaking-bar"></div>
-              <div className="speaking-bar"></div>
-              <div className="speaking-bar"></div>
-            </div>
-          ) : (
-            <div style={getAnimationStyle()}></div>
-          )}
-        </div>
-        <div style={styles.statusText}>{getStatusText()}</div>
+      <div style={styles.statusIndicator}>
+        <div style={{
+          ...styles.indicatorDot,
+          backgroundColor: agentStatus === 'speaking' ? '#4CAF50' : '#2196F3',
+          animation: agentStatus === 'speaking' ? 'pulse 1.5s infinite' : 'listening 1.5s infinite'
+        }}></div>
+        <div style={styles.statusText}>{translations[language].agentStatus[agentStatus]}</div>
       </div>
     );
-  };
-
-  // Get animation style based on current status
-  const getAnimationStyle = () => {
-    switch (agentStatus) {
-      case 'listening':
-        return styles.listeningAnimation;
-      case 'connecting':
-        return styles.connectingAnimation;
-      default:
-        return {};
-    }
-  };
-
-  // Get status color based on current status
-  const getStatusColor = () => {
-    switch (agentStatus) {
-      case 'speaking':
-        return 'rgba(0, 150, 136, 0.2)';
-      case 'listening':
-        return 'rgba(33, 150, 243, 0.2)';
-      case 'connecting':
-        return 'rgba(255, 152, 0, 0.2)';
-      default:
-        return 'rgba(158, 158, 158, 0.2)';
-    }
-  };
-
-  // Get status text based on current status
-  const getStatusText = () => {
-    const text = translations[language].agentStatus[agentStatus];
-    return text || translations[language].agentStatus.idle;
-  };
-
-  // Get microphone button text based on permission status
-  const getMicButtonText = () => {
-    return translations[language].micPermissionButton[micPermission];
-  };
-
-  // Get microphone button style based on permission status
-  const getMicButtonStyle = () => {
-    switch (micPermission) {
-      case 'granted':
-        return { ...styles.micButton, background: 'linear-gradient(90deg, #4caf50, #2e7d32)' };
-      case 'denied':
-        return { ...styles.micButton, background: 'linear-gradient(90deg, #f44336, #d32f2f)' };
-      default:
-        return { ...styles.micButton, background: 'linear-gradient(90deg, #9e9e9e, #616161)' };
-    }
   };
 
   // Render the invalid company alert if needed
@@ -322,168 +306,46 @@ function App() {
     );
   };
 
+  // Render the how it works section
+  const renderHowItWorks = () => {
+    return (
+      <div style={styles.howItWorksContainer}>
+        <h2 style={styles.howItWorksTitle}>
+          {translations[language].howItWorks.title}
+        </h2>
+        <ol style={styles.howItWorksList}>
+          {translations[language].howItWorks.steps.map((step, index) => (
+            <li key={index} style={styles.howItWorksItem}>
+              {step}
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
+  };
+
   return (
     <div style={styles.appContainer}>
-      {/* Dynamic background objects */}
-      <div className="dynamic-background">
-        {Array.from({ length: 70 }).map((_, i) => {
-          const shapeClass = `object${(i % 7) + 1}`;
-          const randomTop = Math.floor(Math.random() * 100) + '%';
-          const randomLeft = Math.floor(Math.random() * 100) + '%';
-          const randomDuration = 20 + Math.random() * 20; // duration between 20s and 40s
-          const randomDelay = Math.random() * 10; // delay between 0s and 10s
-          const inlineStyle = {
-            top: randomTop,
-            left: randomLeft,
-            animationDuration: `${randomDuration}s`,
-            animationDelay: `${randomDelay}s`
-          };
-          return <div key={i} className={`object ${shapeClass}`} style={inlineStyle}></div>;
-        })}
-      </div>
-
-      {/* Inline styles for animations and hover effects */}
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .call-button:hover {
-          transform: scale(1.03);
-          box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        }
-        .dynamic-background {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          overflow: hidden;
-          pointer-events: none;
-        }
-        .object {
-          position: absolute;
-          background: rgba(255, 255, 255, 0.15);
-          border-radius: 50%;
-        }
-        /* Animation keyframes */
-        @keyframes moveRight {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(100vw); }
-        }
-        @keyframes moveLeft {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-100vw); }
-        }
-        @keyframes rotateAndMove {
-          0% { transform: rotate(0deg) translateX(0); }
-          100% { transform: rotate(360deg) translateX(100vw); }
-        }
-        @keyframes floatUpDown {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        @keyframes squareMove {
-          0% { transform: translateX(0); }
-          50% { transform: translateX(20px); }
-          100% { transform: translateX(0); }
-        }
-        @keyframes triangleMove {
-          0% { transform: translateY(0); }
-          50% { transform: translateY(-15px); }
-          100% { transform: translateY(0); }
-        }
-        @keyframes circleBounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        /* Object styles with animations */
-        .object1 {
-          width: 50px;
-          height: 50px;
-          animation-name: moveRight;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-        .object2 {
-          width: 30px;
-          height: 30px;
-          animation-name: moveLeft;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-        .object3 {
-          width: 70px;
-          height: 70px;
-          animation-name: rotateAndMove;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-        .object4 {
-          width: 40px;
-          height: 40px;
-          animation-name: floatUpDown;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
-        .object5 {
-          width: 60px;
-          height: 60px;
-          background: rgba(255, 255, 255, 0.15);
-          border-radius: 10px;
-          animation-name: squareMove;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-//        .object6 {
-//          border-left: 50px solid transparent;
-//          border-right: 30px solid transparent;
-//          border-bottom: 20px solid transparent;
-//          animation-name: triangleMove;
-//          animation-timing-function: linear;
-//          animation-iteration-count: infinite;
-//        }
-        .object7 {
-          width: 40px;
-          height: 40px;
-          animation-name: circleBounce;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: 'Inter', sans-serif;
+          background-color: #f5f5f5;
         }
         
-        /* Speech wave animation */
-        @keyframes speakingWave {
-          0%, 100% { transform: scaleY(0.2); }
-          50% { transform: scaleY(1); }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.7; }
         }
         
-        /* Speaking animation bars */
-        .speaking-bar {
-          background-color: #009688;
-          width: 4px;
-          height: 100%;
-          animation: speakingWave 0.7s infinite;
-        }
-        .speaking-bar:nth-child(1) { animation-delay: 0s; }
-        .speaking-bar:nth-child(2) { animation-delay: 0.1s; }
-        .speaking-bar:nth-child(3) { animation-delay: 0.2s; }
-        .speaking-bar:nth-child(4) { animation-delay: 0.3s; }
-        .speaking-bar:nth-child(5) { animation-delay: 0.4s; }
-        
-        /* Listening pulse animation */
-        @keyframes listeningPulse {
-          0% { transform: scale(1); opacity: 0.7; }
-          50% { transform: scale(1.2); opacity: 1; }
-          100% { transform: scale(1); opacity: 0.7; }
+        @keyframes listening {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
         
-        /* Connecting animation */
-        @keyframes connecting {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 1; }
-        }
-        
-        /* Alert animation */
         @keyframes alertFadeIn {
           0% { opacity: 0; transform: translateY(-20px); }
           10% { opacity: 1; transform: translateY(0); }
@@ -494,153 +356,186 @@ function App() {
 
       {renderInvalidCompanyAlert()}
 
-      <div style={styles.card}>
-        <h1 style={styles.title}>
-          <span style={styles.logo}>{companyName}</span>
-          <span style={styles.titleText}>{translations[language].title}</span>
-        </h1>
-        
-        {renderStatusIndicator()}
-        
-        <button 
-          onClick={requestMicrophoneAccess} 
-          className="call-button" 
-          style={getMicButtonStyle()}
-          disabled={micPermission === 'granted'}
-        >
-          {getMicButtonText()}
-        </button>
-        
-        <button 
-          onClick={startOrRestartCall} 
-          className="call-button" 
-          style={{
-            ...styles.button,
-            background: callActive 
-              ? 'linear-gradient(90deg, #d32f2f, #f44336)' 
-              : 'linear-gradient(90deg, #0044CC, #0056D2)',
-            marginTop: '15px',
-            opacity: micPermission !== 'granted' ? 0.7 : 1,
-          }}
-          disabled={micPermission !== 'granted'}
-        >
-          {callActive 
-            ? translations[language].callButton.restart
-            : translations[language].callButton.start
-          }
-        </button>
+      <div style={styles.cardContainer}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>{translations[language].title}</h1>
+          <p style={styles.subtitle}>{translations[language].subtitle}</p>
+        </div>
+      </div>
+
+      <div style={styles.cardContainer}>
+        <div style={styles.card}>
+          <h2 style={styles.sectionTitle}>{translations[language].sectionTitle}</h2>
+          <p style={styles.sectionDescription}>{translations[language].sectionDescription}</p>
+          
+          {renderStatusIndicator()}
+          
+          <div style={styles.buttonContainer}>
+            {micPermission !== 'granted' && (
+              <button 
+                onClick={requestMicrophoneAccess} 
+                style={styles.micButton}
+              >
+                {translations[language].micPermissionButton[micPermission]}
+              </button>
+            )}
+            
+            {callActive ? (
+              <button 
+                onClick={endCall} 
+                style={styles.endCallButton}
+              >
+                {translations[language].callButton.end}
+              </button>
+            ) : (
+              <button 
+                onClick={handleCallButtonClick} 
+                style={{
+                  ...styles.callButton,
+                  opacity: micPermission !== 'granted' && micPermission !== 'unknown' ? 0.7 : 1,
+                }}
+                disabled={micPermission === 'denied'}
+              >
+                <div style={styles.phoneIcon}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.01 15.38C18.78 15.38 17.59 15.18 16.48 14.82C16.13 14.7 15.74 14.79 15.47 15.06L13.9 17.03C11.07 15.68 8.42 13.13 7.01 10.2L8.96 8.54C9.23 8.26 9.31 7.87 9.2 7.52C8.83 6.41 8.64 5.22 8.64 3.99C8.64 3.45 8.19 3 7.65 3H4.19C3.65 3 3 3.24 3 3.99C3 13.28 10.73 21 20.01 21C20.72 21 21 20.37 21 19.82V16.37C21 15.83 20.55 15.38 20.01 15.38Z" fill="white"/>
+                  </svg>
+                </div>
+                {translations[language].callButton.start}
+              </button>
+            )}
+          </div>
+          
+          {renderHowItWorks()}
+        </div>
       </div>
     </div>
   );
 }
 
-
 const styles = {
   appContainer: {
-    position: 'relative',
-    height: '100vh',
+    minHeight: '100vh',
+    width: '100%',
     display: 'flex',
-    justifyContent: 'center',
+    flexDirection: 'column',
     alignItems: 'center',
-    background: 'radial-gradient(circle at center, rgba(255,255,255,0.1), transparent 70%), linear-gradient(135deg, #0044CC, #0056D2)',
-    backgroundBlendMode: 'overlay',
-    fontFamily: "'Montserrat', sans-serif",
+    justifyContent: 'flex-start',
+    background: '#f5f5f5',
+    padding: '20px',
+    boxSizing: 'border-box',
+  },
+  cardContainer: {
+    width: '100%',
+    maxWidth: '700px',
+    margin: '10px 0',
+  },
+  header: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '30px 40px',
+    textAlign: 'left',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
   },
   card: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: '20px',
-    padding: '40px 60px',
-    boxShadow: '0 15px 35px rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '30px 40px',
     textAlign: 'center',
-    animation: 'fadeIn 1s ease-in-out',
-    zIndex: 1,
-    backdropFilter: 'blur(10px)',
-    width: '420px',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
   },
   title: {
-    fontSize: '2.5rem',
-    marginBottom: '25px',
+    fontSize: '28px',
+    fontWeight: '700',
+    marginBottom: '8px',
     color: '#333',
-    textShadow: '1px 1px 3px rgba(0,0,0,0.1)',
+  },
+  subtitle: {
+    fontSize: '18px',
+    color: '#666',
+    margin: 0,
+  },
+  sectionTitle: {
+    fontSize: '24px',
+    fontWeight: '600',
+    marginBottom: '12px',
+    color: '#333',
+  },
+  sectionDescription: {
+    fontSize: '16px',
+    color: '#666',
+    marginBottom: '30px',
+    maxWidth: '600px',
+    margin: '0 auto 30px auto',
+  },
+  buttonContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-  },
-  logo: {
-    color: '#0044CC',
-    fontWeight: 'bold',
-    marginBottom: '5px',
-  },
-  titleText: {
-    fontSize: '1.8rem',
-  },
-  button: {
-    fontSize: '1.2rem',
-    padding: '15px 30px',
-    borderRadius: '30px',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#fff',
-    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-    transition: 'transform 0.2s, box-shadow 0.2s, background 0.3s',
-    width: '100%',
-    marginTop: '20px',
-    fontWeight: '500',
+    gap: '15px',
+    marginBottom: '30px',
   },
   micButton: {
-    fontSize: '1.1rem',
-    padding: '12px 25px',
-    borderRadius: '30px',
+    backgroundColor: '#9e9e9e',
+    color: 'white',
     border: 'none',
+    borderRadius: '8px',
+    padding: '12px 20px',
+    fontSize: '15px',
     cursor: 'pointer',
-    color: '#fff',
-    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-    transition: 'transform 0.2s, box-shadow 0.2s, background 0.3s',
     width: '100%',
+    maxWidth: '300px',
+    transition: 'background-color 0.3s',
   },
-  statusContainer: {
+  callButton: {
+    backgroundColor: '#4CAF50',
+    color: 'white',
+    border: 'none',
+    borderRadius: '30px',
+    padding: '15px 30px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background-color 0.3s',
+    maxWidth: '300px',
+    width: '100%',
+    boxShadow: '0 4px 8px rgba(76, 175, 80, 0.3)',
+  },
+  endCallButton: {
+    backgroundColor: '#f44336',
+    color: 'white',
+    border: 'none',
+    borderRadius: '30px',
+    padding: '15px 30px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s',
+    maxWidth: '300px',
+    width: '100%',
+    boxShadow: '0 4px 8px rgba(244, 67, 54, 0.3)',
+  },
+  phoneIcon: {
+    marginRight: '10px',
+  },
+  statusIndicator: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: '20px',
-    height: '80px',
-    justifyContent: 'center',
+    margin: '10px 0 20px 0',
   },
-  statusIndicator: {
-    width: '80px',
-    height: '80px',
+  indicatorDot: {
+    width: '12px',
+    height: '12px',
     borderRadius: '50%',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: '10px',
-    transition: 'background 0.3s',
+    marginBottom: '8px',
   },
   statusText: {
-    fontSize: '1rem',
-    color: '#555',
-    transition: 'color 0.3s',
-  },
-  speakingAnimation: {
-    display: 'flex',
-    width: '60%',
-    height: '60%',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  listeningAnimation: {
-    width: '60%',
-    height: '60%',
-    backgroundColor: 'rgba(33, 150, 243, 0.5)',
-    borderRadius: '50%',
-    animation: 'listeningPulse 1.5s infinite ease-in-out',
-  },
-  connectingAnimation: {
-    width: '60%',
-    height: '60%',
-    backgroundColor: 'rgba(255, 152, 0, 0.5)',
-    borderRadius: '50%',
-    animation: 'connecting 1.5s infinite ease-in-out',
+    fontSize: '14px',
+    color: '#666',
   },
   alertContainer: {
     position: 'fixed',
@@ -661,6 +556,29 @@ const styles = {
     color: '#d32f2f',
     maxWidth: '90%',
     backdropFilter: 'blur(5px)',
+  },
+  howItWorksContainer: {
+    textAlign: 'left',
+    backgroundColor: '#f9f9f9',
+    borderRadius: '8px',
+    padding: '20px 25px',
+    marginTop: '10px',
+  },
+  howItWorksTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    marginBottom: '15px',
+    color: '#333',
+  },
+  howItWorksList: {
+    margin: 0,
+    paddingLeft: '25px',
+    color: '#555',
+  },
+  howItWorksItem: {
+    marginBottom: '10px',
+    fontSize: '15px',
+    lineHeight: '1.5',
   }
 };
 
