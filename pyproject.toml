@@ -1,0 +1,23 @@
+[project]
+name = "tokenserver"
+dynamic=["version"]
+description = "Tokenserver to route calls to different voice api providers"
+
+[tool.poetry]
+
+version = "0.1.0"
+
+readme = "README.md"
+packages = [{ include = "tokenserver" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.12"
+poetry-core = "^2.1.3"
+retell-sdk = "^4.32.0"
+pydantic = "^2.11.5"
+uvicorn = "^0.34.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,3 +1,11 @@
+# Note
+I've moved to docker so you just run
+```
+sudo docker build -t myapp . && sudo docker run --rm -p 8000:8000 myapp
+```
+
+and docker handles the rest (maybe i'll even move to poetry building react app, but some other time)
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -68,3 +76,5 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
