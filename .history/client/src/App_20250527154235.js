@@ -328,7 +328,9 @@ function App() {
       <div style={styles.howItWorksContainer}>
         <h2 style={styles.howItWorksTitle}>
         Powered by aiwing.ru
+          
         </h2>
+        <ol style={styles.howItWorksList}> </ol>
       </div>
     );
   };
@@ -367,7 +369,7 @@ function App() {
 
       <div style={styles.cardContainer}>
         <div style={styles.header}>
-          <h1 style={styles.title}>The Trends 2025</h1>
+          <h1 style={styles.title}>{companyName}</h1>
         </div>
       </div>
 

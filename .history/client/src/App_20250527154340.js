@@ -367,7 +367,7 @@ function App() {
 
       <div style={styles.cardContainer}>
         <div style={styles.header}>
-          <h1 style={styles.title}>The Trends 2025</h1>
+          <h1 style={styles.title}>TheTrends 2025</h1>
         </div>
       </div>
 

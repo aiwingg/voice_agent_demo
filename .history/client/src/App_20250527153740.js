@@ -327,8 +327,15 @@ function App() {
     return (
       <div style={styles.howItWorksContainer}>
         <h2 style={styles.howItWorksTitle}>
-        Powered by aiwing.ru
+          {translations[language].howItWorks.title}
         </h2>
+        <ol style={styles.howItWorksList}>
+          {translations[language].howItWorks.steps.map((step, index) => (
+            <li key={index} style={styles.howItWorksItem}>
+              {step}
+            </li>
+          ))}
+        </ol>
       </div>
     );
   };
@@ -367,7 +374,8 @@ function App() {
 
       <div style={styles.cardContainer}>
         <div style={styles.header}>
-          <h1 style={styles.title}>The Trends 2025</h1>
+          <h1 style={styles.title}>{companyName}</h1>
+          <p style={styles.subtitle}>{translations[language].subtitle}</p>
         </div>
       </div>
 
