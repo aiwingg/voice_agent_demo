@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
+import OrderHistory from './OrderHistory';
 
 function App() {
   const [callActive, setCallActive] = useState(false);
@@ -276,6 +277,11 @@ function App() {
             </button>
           </div>
         )}
+
+        {/* Order History Section */}
+        <div style={styles.historySection}>
+          <OrderHistory telegramId={telegramId} />
+        </div>
       </div>
     </div>
   );
@@ -303,7 +309,14 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    maxWidth: '95vw',
+    maxHeight: '95vh',
+    overflow: 'auto',
+  },
+  historySection: {
+    marginTop: '40px',
+    width: '100%',
   },
   title: {
     fontSize: '2.5rem',
