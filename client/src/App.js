@@ -25,7 +25,7 @@ const translations = {
       connecting: 'Connecting...',
       idle: 'Not active'
     },
-    invalidCompany: 'Invalid company ID. Using default agent.',
+    poweredBy: 'Powered by Sycorax.ai',
     howItWorks: {
       title: 'How it works',
       steps: [
@@ -57,7 +57,7 @@ const translations = {
       connecting: 'Подключение...',
       idle: 'Не активен'
     },
-    invalidCompany: 'Неверный ID компании. Используется агент по умолчанию.',
+    poweredBy: 'Powered by aiwing.ru',
     howItWorks: {
       title: 'Как это работает',
       steps: [
@@ -74,49 +74,43 @@ function App() {
   const [callActive, setCallActive] = useState(false);
   const [agentStatus, setAgentStatus] = useState('idle'); // idle, listening, speaking
   const [micPermission, setMicPermission] = useState('unknown'); // unknown, granted, denied
-  const [companyId, setCompanyId] = useState(null);
-  const [companyName, setCompanyName] = useState(DEFAULT_COMPANY_NAME);
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
-  const [showInvalidCompanyAlert, setShowInvalidCompanyAlert] = useState(false);
+  const [companyName, setCompanyName] = useState(DEFAULT_COMPANY_NAME);
+  const [companyId, setCompanyId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
-    // Get company_id from URL query parameters
-    const queryParams = new URLSearchParams(window.location.search);
-    const companyIdParam = queryParams.get('company_id');
-    console.log('companyIdParam', companyIdParam);
-    
-    const fetchCompanyData = async (companyId) => {
+    // Get company_id from URL query parameters and fetch company data
+    const fetchCompanyData = async () => {
       try {
-        const response = await fetch(`/api/company/${companyId}`);
-        if (!response.ok) {
-          if (response.status === 404) {
-            setShowInvalidCompanyAlert(true);
-            setTimeout(() => {
-              setShowInvalidCompanyAlert(false);
-            }, 5000);
-            return;
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        setIsLoading(true);
+        const queryParams = new URLSearchParams(window.location.search);
+        const companyIdParam = queryParams.get('company_id');
         
-        const data = await response.json();
-        setCompanyId(companyId);
-        setLanguage(data.language);
-        setCompanyName(data.companyName);
+        if (companyIdParam) {
+          console.log('Fetching company data for ID:', companyIdParam);
+          const response = await fetch(`/api/company/${companyIdParam}`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            setCompanyId(companyIdParam);
+            setCompanyName(data.companyName);
+            setLanguage(data.language);
+            console.log('Company data loaded:', data);
+          } else {
+            console.warn('Company not found, using defaults');
+          }
+        }
       } catch (error) {
         console.error('Error fetching company data:', error);
-        setShowInvalidCompanyAlert(true);
-        setTimeout(() => {
-          setShowInvalidCompanyAlert(false);
-        }, 5000);
+      } finally {
+        setIsLoading(false);
       }
     };
-    
-    if (companyIdParam) {
-      fetchCompanyData(companyIdParam);
-    }
+
+    fetchCompanyData();
 
     // Check if microphone permission is already granted
     checkMicrophonePermission();
@@ -162,8 +156,6 @@ function App() {
       client.stopCall();
     };
   }, []);
-
-  
 
   // Check if microphone permission is already granted
   const checkMicrophonePermission = async () => {
@@ -213,25 +205,14 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           metadata: { demo: true },
-          company_id: companyId 
+          company_id: companyId
         }),
       });
-      console.log('response', response);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      
-      // We don't need to set these values here anymore since we're already setting them
-      // from the URL parameters, but we'll keep this as a fallback
-      if (data.metadata) {
-        // Only update if these values weren't already set from URL parameters
-        if (!companyId && data.metadata.company_name !== companyName) {
-          setLanguage(data.metadata.language);
-          setCompanyName(data.metadata.company_name);
-        }
-      }
-      
       return data;
     } catch (error) {
       console.error('Error creating web call on server:', error);
@@ -309,29 +290,26 @@ function App() {
     );
   };
 
-  // Render the invalid company alert if needed
-  const renderInvalidCompanyAlert = () => {
-    if (!showInvalidCompanyAlert) return null;
-    
-    return (
-      <div style={styles.alertContainer}>
-        <div style={styles.alert}>
-          {translations[language].invalidCompany}
-        </div>
-      </div>
-    );
-  };
-
-  // Render the how it works section
+  // Render the how it works section with dynamic powered by text
   const renderHowItWorks = () => {
     return (
       <div style={styles.howItWorksContainer}>
         <h2 style={styles.howItWorksTitle}>
-        Powered by aiwing.ru
+          {translations[language].poweredBy}
         </h2>
       </div>
     );
   };
+
+  // Show loading spinner while fetching company data
+  if (isLoading) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.loadingSpinner}></div>
+        <p style={styles.loadingText}>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.appContainer}>
@@ -355,19 +333,15 @@ function App() {
           50% { opacity: 0.5; }
         }
         
-        @keyframes alertFadeIn {
-          0% { opacity: 0; transform: translateY(-20px); }
-          10% { opacity: 1; transform: translateY(0); }
-          90% { opacity: 1; }
-          100% { opacity: 0; }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
 
-      {renderInvalidCompanyAlert()}
-
       <div style={styles.cardContainer}>
         <div style={styles.header}>
-          <h1 style={styles.title}>The Trends 2025</h1>
+          <h1 style={styles.title}>{companyName}</h1>
         </div>
       </div>
 
@@ -432,6 +406,29 @@ const styles = {
     background: '#f5f5f5',
     padding: '20px',
     boxSizing: 'border-box',
+  },
+  loadingContainer: {
+    minHeight: '100vh',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#f5f5f5',
+  },
+  loadingSpinner: {
+    width: '40px',
+    height: '40px',
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #4CAF50',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+    marginBottom: '20px',
+  },
+  loadingText: {
+    fontSize: '16px',
+    color: '#666',
+    fontFamily: 'Inter, sans-serif',
   },
   cardContainer: {
     width: '100%',
@@ -545,26 +542,6 @@ const styles = {
     fontSize: '14px',
     color: '#666',
   },
-  alertContainer: {
-    position: 'fixed',
-    top: '20px',
-    left: 0,
-    right: 0,
-    display: 'flex',
-    justifyContent: 'center',
-    zIndex: 10,
-    animation: 'alertFadeIn 5s forwards',
-  },
-  alert: {
-    background: 'rgba(253, 236, 234, 0.9)',
-    border: '1px solid #f44336',
-    borderRadius: '6px',
-    padding: '12px 20px',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-    color: '#d32f2f',
-    maxWidth: '90%',
-    backdropFilter: 'blur(5px)',
-  },
   howItWorksContainer: {
     textAlign: 'left',
     backgroundColor: '#f9f9f9',
@@ -577,16 +554,6 @@ const styles = {
     fontWeight: '600',
     marginBottom: '15px',
     color: '#333',
-  },
-  howItWorksList: {
-    margin: 0,
-    paddingLeft: '25px',
-    color: '#555',
-  },
-  howItWorksItem: {
-    marginBottom: '10px',
-    fontSize: '15px',
-    lineHeight: '1.5',
   }
 };
 
