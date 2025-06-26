@@ -8,6 +8,39 @@ const { getCompanyData } = require('./google-sheets');
 
 const app = express();
 
+// Trust proxy (required for Heroku)
+app.set('trust proxy', 1);
+
+// Force HTTPS on Heroku
+app.use((req, res, next) => {
+  // Check if we're on Heroku and not using HTTPS
+  if (req.header('x-forwarded-proto') !== 'https' && process.env.NODE_ENV === 'production') {
+    // Redirect to HTTPS
+    return res.redirect(`https://${req.header('host')}${req.url}`);
+  }
+  next();
+});
+
+// Security headers
+app.use((req, res, next) => {
+  // HSTS - Force HTTPS for 1 year
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  
+  // Prevent MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // XSS protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Referrer policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  next();
+});
+
 // Enable CORS if needed for API endpoints (if client is on same domain, this may be optional)
 app.use(cors());
 app.use(bodyParser.json());
@@ -46,7 +79,7 @@ app.post('/api/create-web-call', async (req, res) => {
       retell_llm_dynamic_variables: {
         'user_number': '9280291870',
         'name': company_name,
-        'purchase_history': '- Филе ЦБ 15кг мон зам Благояр (339.2 руб / кг) [ЦБ-00001549]\n - Филе ЦБ Халяль "Для жарки" мон зам Благояр (342.38 руб / кг) [01-00003115]\n - Филе ЦБ Халяль мон зам Чагулов ИП (311.0 руб / кг) [01-00012701]\n - 1 сорт Тушка ЦБ пак зам Благояр (180.2 руб / кг) [00-00000028]\n - 1 сорт Тушка ЦБ 1,7 кг Халяль пак зам АН-НУР (192.92 руб / кг) [01-00003181]'
+        'purchase_history': '- Филе ЦБ 15кг мон зам Благояр (339.2 руб / кг) [ЦБ-00001549]\n - Филе ЦБ Халяль "Для жарки" мон зам Благояр (342.38 руб / кг) [01-00003115]\n - Филе ЦБ Халяль мон зам Чагулов ИП (311.0 руб / кг) [01-00012701]\n - 1 сорт Тушка ЦБ пак зам Благояр (180.2 руб / кг) [00-00000028]\n - 1 сорт Тушка ЦБ Халяль пак зам АН-НУР (192.92 руб / кг) [01-00003181]'
       },
     });
     
