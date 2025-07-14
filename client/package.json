@@ -3,16 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@livekit/components-react": "^2.9.3",
+    "framer-motion": "^12.23.3",
+    "livekit-client": "^2.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "retell-client-js-sdk": "^2.0.5"
+    "retell-client-js-sdk": "^2.0.7",
+    "sycoraxai-voice-assistants": "^1.2.5",
+    "targetai-client-js-sdk": "^1.0.5"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^16.3.0"
   },
   "browserslist": {
     "production": [
