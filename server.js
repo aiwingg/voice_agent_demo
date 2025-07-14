@@ -1,9 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
-const Retell = require('retell-sdk'); // Using the Node SDK for Retell
-const axios = require('axios'); // Add axios for making HTTP requests
+const axios = require('axios'); // Used for making HTTP requests
 
 const app = express();
 
@@ -11,37 +11,22 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Your API endpoint to create a web call
-const API_KEY = 'key_7335fefc4661ce2fd9f790780ad5';
-const AGENT_ID = 'agent_838c0e063de92ecdacfa548307';
-app.post('/api/create-web-call', async (req, res) => {
+// Token endpoint for TargetAI
+const API_KEY = process.env.TARGETAI_API_KEY;
+const BASE_URL = process.env.TARGETAI_BASE_URL;
+
+app.post('/token', async (req, res) => {
   try {
-    // Extract Telegram ID from request body
-    const telegramId = req.body.telegramId || '9280291870';
-    
-    // Make request to AI Wingg webhook
-    const webhookResponse = await axios.post('https://aiwingg.com/rag/webhook', {
-      call_inbound: {
-        from_number: telegramId
-      }
+    const resp = await axios.post(`${BASE_URL}/token`, req.body || {}, {
+      headers: { Authorization: `Bearer ${API_KEY}` }
     });
-
-    // Extract dynamic variables from the response
-    const dynamicVars = webhookResponse.data.call_inbound.dynamic_variables;
-    
-    const retellClient = new Retell({ apiKey: API_KEY });
-    const webCallResponse = await retellClient.call.createWebCall({
-      agent_id: AGENT_ID,
-      metadata: { demo: true },
-      retell_llm_dynamic_variables: dynamicVars,
-    });
-
-    res.status(201).json(webCallResponse);
-  } catch (error) {
-    console.error('Error creating web call:', error);
-    res.status(500).json({ error: 'Error creating web call' });
+    res.json({ token: resp.data.token });
+  } catch (err) {
+    console.error('Error creating TargetAI token:', err.message);
+    res.status(500).json({ error: 'Error creating token' });
   }
 });
+
 
 // Serve React build
 app.use(express.static(path.join(__dirname, 'client', 'build')));

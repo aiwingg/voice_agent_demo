@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RetellWebClient } from 'retell-client-js-sdk';
+import { createVoiceAssistant } from 'sycoraxai-voice-assistants';
 import OrderHistory from './OrderHistory';
 
 function App() {
@@ -8,7 +8,7 @@ function App() {
   const [manualTelegramId, setManualTelegramId] = useState('');
   const [hasMicrophonePermission, setHasMicrophonePermission] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const retellClientRef = useRef(null);
+  const assistantRef = useRef(null);
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
@@ -27,51 +27,40 @@ function App() {
       console.warn('Telegram WebApp JS SDK не найден');
     }
 
-    // Инициализируем Retell клиент
-    retellClientRef.current = new RetellWebClient();
-    const client = retellClientRef.current;
-
-    client.on('call_started',    () => console.log('Call started'));
-    client.on('call_ended',      () => console.log('Call ended'));
-    client.on('agent_start_talking', () => console.log('Agent started talking'));
-    client.on('agent_stop_talking',  () => console.log('Agent stopped talking'));
-    client.on('update', update => console.log('Update:', update));
-    client.on('error', error => {
-      console.error('An error occurred:', error);
-      client.stopCall();
-      setCallActive(false);
+    // Initialize TargetAI assistant via sycorax
+    assistantRef.current = createVoiceAssistant('targetai', {
+      onCallStarted: () => console.log('Call started'),
+      onCallEnded: () => setCallActive(false),
+      onAgentStartTalking: () => console.log('Agent started talking'),
+      onAgentStopTalking: () => console.log('Agent stopped talking'),
+      onError: (err) => {
+        console.error('Assistant error:', err);
+        setCallActive(false);
+      },
     });
 
-    return () => { client.stopCall(); };
+    return () => { assistantRef.current?.disconnect(); };
   }, []);
-
-  const createWebCall = async () => {
-    const response = await fetch('/api/create-web-call', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telegramId })
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return response.json();
-  };
-
   const startOrRestartCall = async () => {
     if (isProcessingRef.current) return;
     isProcessingRef.current = true;
     try {
       if (callActive) {
         setCallActive(false);
-        await retellClientRef.current.stopCall();
+        await assistantRef.current.disconnect();
         await new Promise(r => setTimeout(r, 500));
       }
       setCallActive(true);
       setIsMuted(false); // Reset mute state on new call
-      const callData = await createWebCall();
-      await retellClientRef.current.startCall({
-        accessToken: callData.access_token,
+      await assistantRef.current.connect({
+        provider: 'targetai',
+        serverUrl: process.env.REACT_APP_TARGETAI_RUNTIME_URL,
+        tokenServerUrl: process.env.REACT_APP_TARGETAI_TOKEN_URL,
+        agentUuid: process.env.REACT_APP_TARGETAI_AGENT_UUID,
+        allowedResponses: ['text', 'voice'],
         sampleRate: 24000,
-        captureDeviceId: 'default',
         emitRawAudioSamples: false,
+        dataInput: { phone_number: telegramId },
       });
     } catch (err) {
       console.error('Error starting/restarting call:', err);
@@ -98,12 +87,12 @@ function App() {
   };
 
   const handleMuteToggle = () => {
-    if (!retellClientRef.current) return;
+    if (!assistantRef.current) return;
     if (!isMuted) {
-      retellClientRef.current.mute();
+      assistantRef.current.client.setMicrophoneEnabled(false);
       setIsMuted(true);
     } else {
-      retellClientRef.current.unmute();
+      assistantRef.current.client.setMicrophoneEnabled(true);
       setIsMuted(false);
     }
   };
