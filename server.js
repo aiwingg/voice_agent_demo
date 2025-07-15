@@ -28,7 +28,7 @@ app.post('/api/create-web-call', async (req, res) => {
 
     // Extract dynamic variables from the response
     let dynamicVars = webhookResponse.data.call_inbound.dynamic_variables;
-    dynamicVars.pop('purchase_history');
+    delete dynamicVars['purchase_history'];
     
     const retellClient = new Retell({ apiKey: API_KEY });
     const webCallResponse = await retellClient.call.createWebCall({
