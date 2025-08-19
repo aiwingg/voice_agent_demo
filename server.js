@@ -20,7 +20,7 @@ app.post('/api/create-web-call', async (req, res) => {
     const telegramId = req.body.telegramId || '9280291870';
     
     // Make request to AI Wingg webhook
-    const webhookResponse = await axios.post('https://aiwingg.com/rag/webhook', {
+    const webhookResponse = await axios.post('https://aiwing-vtd-tool-server-39f1cb3ea6a7.herokuapp.com/rag/webhook', {
       call_inbound: {
         from_number: telegramId
       }
