@@ -115,6 +115,24 @@ function App() {
     }
   };
 
+  const impactBubbles = [
+    {
+      title: 'Рост прямых бронирований',
+      metric: '+28%',
+      description: 'Конверсия входящих запросов в бронирования за первые 90 дней работы голосового ассистента.',
+    },
+    {
+      title: 'Экономия времени команды',
+      metric: '−42%',
+      description: 'Сокращение рутинных звонков и сообщений для администраторов смены благодаря автоматическим ответам.',
+    },
+    {
+      title: 'Уровень удовлетворённости гостей',
+      metric: '9.4 / 10',
+      description: 'Средняя оценка постояльцев по опросам после внедрения Host Assist в отелях-партнёрах.',
+    },
+  ];
+
   return (
     <div className="app">
       <div className="background-orbs" aria-hidden="true">
@@ -169,25 +187,13 @@ function App() {
         </section>
 
         <aside className="info-panel">
-          <div className="info-card">
-            <h2>Как проходит разговор</h2>
-            <ol>
-              <li>Нажмите кнопку и разрешите доступ к микрофону.</li>
-              <li>Представьтесь и опишите вопрос гостя или задачу.</li>
-              <li>Следуйте рекомендациям помощника и уточняйте детали.</li>
-            </ol>
-          </div>
-
-          <div className="info-card gradient-card">
-            <h2>Советы по использованию</h2>
-            <p>Говорите естественно, делайте паузы для обработки ответов и сохраняйте спокойный темп речи.</p>
-            <p>При необходимости нажмите кнопку ещё раз, чтобы обновить сценарий разговора.</p>
-          </div>
-
-          <div className="info-card soft-card">
-            <h2>Почему гости довольны</h2>
-            <p>Ассистент вежливо общается, адаптируется под ситуацию и подсказывает решения для любых сценариев проживания.</p>
-          </div>
+          {impactBubbles.map((bubble) => (
+            <div className="info-card" key={bubble.title}>
+              <div className="metric-value">{bubble.metric}</div>
+              <h2>{bubble.title}</h2>
+              <p>{bubble.description}</p>
+            </div>
+          ))}
         </aside>
       </main>
 
