@@ -1,274 +1,308 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
+import './App.css';
+import logo from './assets/host-assist-logo.svg';
 
 function App() {
   const [callActive, setCallActive] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('Помощник готов к запуску.');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [companyId, setCompanyId] = useState('');
+  const [companyInfo, setCompanyInfo] = useState(null);
+  const [companyLoading, setCompanyLoading] = useState(false);
+  const [companyError, setCompanyError] = useState('');
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
 
+  const floatingOrbs = useMemo(
+    () => [
+      { top: '6%', left: '8%', size: 260, delay: '0s' },
+      { top: '68%', left: '12%', size: 200, delay: '4s' },
+      { top: '18%', left: '76%', size: 180, delay: '7s' },
+      { top: '60%', left: '75%', size: 240, delay: '11s' },
+      { top: '35%', left: '45%', size: 160, delay: '14s' },
+    ],
+    []
+  );
+
   useEffect(() => {
-    // Initialize the Retell client
     retellClientRef.current = new RetellWebClient();
     const client = retellClientRef.current;
 
     client.on('call_started', () => {
-      console.log('Call started');
+      setCallActive(true);
+      setStatusMessage('Помощник на связи. Задайте вопрос гостя или расскажите задачу.');
+      setErrorMessage('');
     });
 
     client.on('call_ended', () => {
-      console.log('Call ended');
+      setCallActive(false);
+      setStatusMessage('Разговор завершён. Нажмите кнопку, чтобы начать новый звонок.');
     });
 
     client.on('agent_start_talking', () => {
-      console.log('Agent started talking');
+      setStatusMessage('Помощник отвечает на запрос.');
     });
 
     client.on('agent_stop_talking', () => {
-      console.log('Agent stopped talking');
+      setStatusMessage('Помощник ждёт вашего ответа.');
     });
 
     client.on('update', (update) => {
-      console.log('Update:', update);
+      console.log('Обновление звонка:', update);
     });
 
     client.on('error', (error) => {
-      console.error('An error occurred:', error);
-      client.stopCall();
+      console.error('Произошла ошибка звонка:', error);
+      setErrorMessage('Не удалось поддерживать соединение. Попробуйте запустить помощника снова.');
+      setStatusMessage('Соединение прервано.');
       setCallActive(false);
+      client.stopCall();
     });
 
-    // Cleanup on unmount
     return () => {
       client.stopCall();
     };
   }, []);
 
-  // Fetch the web call token from your own server endpoint
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paramValue =
+      params.get('companyId') ||
+      params.get('company_id') ||
+      params.get('company') ||
+      '';
+    if (paramValue) {
+      setCompanyId(paramValue.trim());
+    }
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadCompanyInfo(selectedCompanyId) {
+      if (!selectedCompanyId) {
+        setCompanyInfo(null);
+        setCompanyError('');
+        return;
+      }
+
+      setCompanyLoading(true);
+      setCompanyError('');
+
+      try {
+        const response = await fetch(`/api/company-config?companyId=${encodeURIComponent(selectedCompanyId)}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Не найдена конфигурация компании.');
+          }
+          throw new Error(`Ошибка загрузки конфигурации: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!ignore) {
+          setCompanyInfo(data);
+        }
+      } catch (error) {
+        console.error('Не удалось получить данные компании:', error);
+        if (!ignore) {
+          setCompanyInfo(null);
+          setCompanyError('Не удалось получить настройки компании. Будет использован помощник по умолчанию.');
+        }
+      } finally {
+        if (!ignore) {
+          setCompanyLoading(false);
+        }
+      }
+    }
+
+    loadCompanyInfo(companyId);
+
+    return () => {
+      ignore = true;
+    };
+  }, [companyId]);
+
   const createWebCall = async () => {
     try {
+      const payload = {
+        metadata: {
+          источник: 'host-assist-demo'
+        }
+      };
+
+      if (companyId) {
+        payload.companyId = companyId;
+      }
+
+      if (companyInfo?.metadata) {
+        payload.metadata = {
+          ...companyInfo.metadata,
+          ...payload.metadata
+        };
+      }
+
+      if (companyInfo?.agentId) {
+        payload.agentId = companyInfo.agentId;
+      }
+
+      if (companyInfo?.retell_llm_dynamic_variables) {
+        payload.dynamicVariables = companyInfo.retell_llm_dynamic_variables;
+      }
+
       const response = await fetch('/api/create-web-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metadata: { demo: true } }),
+        body: JSON.stringify(payload),
       });
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Ошибка HTTP: ${response.status}`);
       }
+
       return await response.json();
     } catch (error) {
-      console.error('Error creating web call on server:', error);
+      console.error('Ошибка при создании веб-звонка:', error);
       throw error;
     }
   };
 
-  // Start or restart the call while ensuring only one process runs at a time
   const startOrRestartCall = async () => {
-    if (isProcessingRef.current) return;
+    if (isProcessingRef.current) {
+      return;
+    }
+
+    if (companyLoading) {
+      setStatusMessage('Дождитесь загрузки настроек компании...');
+      return;
+    }
+
     isProcessingRef.current = true;
+    setErrorMessage('');
 
     try {
       if (callActive) {
-        console.log('Stopping current call...');
-        setCallActive(false);
+        setStatusMessage('Завершаем текущий разговор...');
         await retellClientRef.current.stopCall();
-        // Small delay to ensure the call stops completely
-        await new Promise(resolve => setTimeout(resolve, 500));
+        setCallActive(false);
+        await new Promise((resolve) => setTimeout(resolve, 400));
       }
-      setCallActive(true);
-      console.log('Creating new web call...');
+
+      setStatusMessage('Соединяем вас с цифровым ассистентом...');
       const callData = await createWebCall();
-      console.log('Call data:', callData);
       const accessToken = callData.access_token;
+
       await retellClientRef.current.startCall({
         accessToken,
-        sampleRate: 24000,         // Optional: adjust as needed
-        captureDeviceId: 'default',  // Optional: choose your mic device
-        emitRawAudioSamples: false,  // Optional: disable raw audio sample events
+        sampleRate: 24000,
+        captureDeviceId: 'default',
+        emitRawAudioSamples: false,
       });
     } catch (error) {
-      console.error('Error starting/restarting call:', error);
+      setStatusMessage('Попробуйте начать звонок ещё раз.');
+      setErrorMessage('Не удалось установить соединение. Проверьте подключение и повторите попытку.');
+      setCallActive(false);
     } finally {
       isProcessingRef.current = false;
     }
   };
 
   return (
-    <div style={styles.appContainer}>
-      {/* Dynamic background objects */}
-      <div className="dynamic-background">
-        {Array.from({ length: 70 }).map((_, i) => {
-          const shapeClass = `object${(i % 7) + 1}`;
-          const randomTop = Math.floor(Math.random() * 100) + '%';
-          const randomLeft = Math.floor(Math.random() * 100) + '%';
-          const randomDuration = 20 + Math.random() * 20; // duration between 20s and 40s
-          const randomDelay = Math.random() * 10; // delay between 0s and 10s
-          const inlineStyle = {
-            top: randomTop,
-            left: randomLeft,
-            animationDuration: `${randomDuration}s`,
-            animationDelay: `${randomDelay}s`
-          };
-          return <div key={i} className={`object ${shapeClass}`} style={inlineStyle}></div>;
-        })}
+    <div className="app">
+      <div className="background-orbs" aria-hidden="true">
+        {floatingOrbs.map((orb, index) => (
+          <span
+            key={index}
+            className={`orb orb-${(index % 3) + 1}`}
+            style={{
+              top: orb.top,
+              left: orb.left,
+              width: orb.size,
+              height: orb.size,
+              animationDelay: orb.delay,
+            }}
+          />
+        ))}
       </div>
 
-      {/* Inline styles for animations and hover effects */}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .call-button:hover {
-          transform: scale(1.03);
-          box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        }
-        .dynamic-background {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          overflow: hidden;
-          pointer-events: none;
-        }
-        .object {
-          position: absolute;
-          background: rgba(255, 255, 255, 0.15);
-          border-radius: 50%;
-        }
-        /* Animation keyframes */
-        @keyframes moveRight {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(100vw); }
-        }
-        @keyframes moveLeft {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-100vw); }
-        }
-        @keyframes rotateAndMove {
-          0% { transform: rotate(0deg) translateX(0); }
-          100% { transform: rotate(360deg) translateX(100vw); }
-        }
-        @keyframes floatUpDown {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        @keyframes squareMove {
-          0% { transform: translateX(0); }
-          50% { transform: translateX(20px); }
-          100% { transform: translateX(0); }
-        }
-        @keyframes triangleMove {
-          0% { transform: translateY(0); }
-          50% { transform: translateY(-15px); }
-          100% { transform: translateY(0); }
-        }
-        @keyframes circleBounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        /* Object styles with animations */
-        .object1 {
-          width: 50px;
-          height: 50px;
-          animation-name: moveRight;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-        .object2 {
-          width: 30px;
-          height: 30px;
-          animation-name: moveLeft;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-        .object3 {
-          width: 70px;
-          height: 70px;
-          animation-name: rotateAndMove;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-        .object4 {
-          width: 40px;
-          height: 40px;
-          animation-name: floatUpDown;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
-        .object5 {
-          width: 60px;
-          height: 60px;
-          background: rgba(255, 255, 255, 0.15);
-          border-radius: 10px;
-          animation-name: squareMove;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-//        .object6 {
-//          border-left: 50px solid transparent;
-//          border-right: 30px solid transparent;
-//          border-bottom: 20px solid transparent;
-//          animation-name: triangleMove;
-//          animation-timing-function: linear;
-//          animation-iteration-count: infinite;
-//        }
-        .object7 {
-          width: 40px;
-          height: 40px;
-          animation-name: circleBounce;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
-      `}</style>
+      <header className="header">
+        <div className="branding">
+          <img src={logo} alt="Логотип Host Assist" className="logo" />
+          <div className="brand-text">
+            <p className="brand-name">Host Assist</p>
+            <p className="brand-tagline">Голосовой помощник для гостей</p>
+          </div>
+        </div>
+        <p className="header-note">Служба заботливого приёма гостей с мгновенными ответами 24/7.</p>
+      </header>
 
-      <div style={styles.card}>
-        <h1 style={styles.title}>Голосовой Агент<br />ВТД</h1>
-        <button onClick={startOrRestartCall} className="call-button" style={styles.button}>
-          {callActive ? '🎤 Перезапустить Голосового Агента' : '🎤 Запустить Голосового Агента'}
-        </button>
-      </div>
+      <main className="main">
+        <section className="call-panel">
+          <span className="badge">Цифровой консьерж</span>
+          <h1>Host Assist — голосовой помощник для ваших гостей</h1>
+          <p className="lead">
+            Автоматизируйте ответы на популярные вопросы и делегируйте рутинные задачи голосовому ассистенту, который говорит
+            естественно, запоминает детали и поддерживает ваш стиль общения.
+          </p>
+
+          <div className="call-actions">
+            <button
+              onClick={startOrRestartCall}
+              className={`primary-button ${callActive ? 'active' : ''}`}
+              disabled={companyLoading}
+            >
+              {callActive ? '🔁 Перезапустить звонок' : '🎤 Начать звонок'}
+            </button>
+            {companyId && (
+              <p className="company-status">
+                {companyLoading && `Загружаем настройки для компании ${companyId}...`}
+                {!companyLoading && companyInfo && (
+                  <>
+                    Настройки загружены для компании «{companyInfo.companyName || companyId}»
+                    {companyInfo.source === 'google-sheets' && <span className="company-source"> · Google Sheets</span>}
+                    {companyInfo.source === 'fallback' && <span className="company-source fallback"> · демо-профиль</span>}
+                  </>
+                )}
+                {!companyLoading && companyError && <span className="company-error">{companyError}</span>}
+              </p>
+            )}
+            <p className="status-text">{statusMessage}</p>
+            {errorMessage && <p className="error-text">{errorMessage}</p>}
+          </div>
+
+          <ul className="benefits">
+            <li>Мгновенно рассказывает о заселении, Wi-Fi и сервисах локации.</li>
+            <li>Фиксирует пожелания гостей и передаёт их вашей команде.</li>
+            <li>Работает на любом устройстве без установки приложений.</li>
+          </ul>
+        </section>
+
+        <aside className="info-panel">
+          <div className="info-card metric-card metric-card-blue">
+            <span className="metric-value">63%</span>
+            <h2>запросов гостей закрывается автоматически</h2>
+            <p>Host Assist снимает рутину с ресепшн и освобождает время для персонализированного сервиса.</p>
+          </div>
+
+          <div className="info-card metric-card metric-card-green">
+            <span className="metric-value">11&nbsp;сек.</span>
+            <h2>среднее время первого ответа</h2>
+            <p>Гости получают мгновенную реакцию, что повышает оценку сервиса и снижает количество повторных звонков.</p>
+          </div>
+
+          <div className="info-card metric-card metric-card-gold">
+            <span className="metric-value">18&nbsp;часов</span>
+            <h2>экономии труда в неделю</h2>
+            <p>Команда тратит меньше времени на типовые вопросы и концентрируется на задачах с высокой ценностью.</p>
+          </div>
+        </aside>
+      </main>
+
+      <footer className="footer">
+        <p>© {new Date().getFullYear()} Host Assist. Голосовой сервис для заботливых хозяев.</p>
+      </footer>
     </div>
   );
 }
-
-const styles = {
-  appContainer: {
-    position: 'relative',
-    height: '100vh',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    background: 'radial-gradient(circle at center, rgba(255,255,255,0.1), transparent 70%), linear-gradient(135deg, #0044CC, #0056D2)',
-    backgroundBlendMode: 'overlay',
-    fontFamily: "'Montserrat', sans-serif",
-  },
-  card: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: '15px',
-    padding: '40px 60px',
-    boxShadow: '0 15px 35px rgba(0, 0, 0, 0.2)',
-    textAlign: 'center',
-    animation: 'fadeIn 1s ease-in-out',
-    zIndex: 1
-  },
-  title: {
-    fontSize: '2.5rem',
-    marginBottom: '20px',
-    color: '#333',
-    textShadow: '1px 1px 3px rgba(0,0,0,0.2)',
-  },
-  button: {
-    fontSize: '1.2rem',
-    padding: '15px 30px',
-    borderRadius: '30px',
-    border: 'none',
-    cursor: 'pointer',
-    background: 'linear-gradient(90deg, #0044CC, #0056D2)',
-    color: '#fff',
-    boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-    transition: 'transform 0.2s, box-shadow 0.2s',
-  },
-};
 
 export default App;
