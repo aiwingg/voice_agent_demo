@@ -1,38 +1,424 @@
-.App {
-  text-align: center;
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
+body {
+  margin: 0;
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  background: #f5f9ff;
+  color: #183152;
+}
+
+.app {
+  position: relative;
+  min-height: 100vh;
+  padding: 48px clamp(20px, 5vw, 72px) 32px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(32px, 4vw, 56px);
+  background: radial-gradient(circle at top left, rgba(93, 186, 255, 0.28), transparent 52%),
+    radial-gradient(circle at bottom right, rgba(110, 232, 190, 0.28), transparent 60%),
+    linear-gradient(135deg, #ffffff 0%, #ecf5ff 48%, #e6f9f2 100%);
+  overflow: hidden;
+}
+
+.background-orbs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
   pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(0.4px);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0));
+  opacity: 0.32;
+  animation: float 18s ease-in-out infinite;
+}
+
+.orb-2 {
+  background: radial-gradient(circle at 70% 30%, rgba(132, 196, 255, 0.55), rgba(132, 196, 255, 0));
+  animation-duration: 22s;
+}
+
+.orb-3 {
+  background: radial-gradient(circle at 50% 50%, rgba(123, 232, 193, 0.55), rgba(123, 232, 193, 0));
+  animation-duration: 26s;
+}
+
+@keyframes float {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -20px, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: clamp(16px, 3vw, 32px);
+}
+
+.branding {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 18px 48px rgba(33, 85, 163, 0.15);
+  border: 1px solid rgba(112, 158, 219, 0.16);
+}
+
+.logo {
+  width: clamp(72px, 12vw, 120px);
+  height: auto;
+}
+
+.brand-text {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.brand-name {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1b3259;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.brand-tagline {
+  margin: 4px 0 0;
+  font-size: clamp(14px, 2vw, 16px);
+  color: rgba(27, 50, 89, 0.7);
+}
+
+.header-note {
+  max-width: 420px;
+  margin: 0;
+  color: rgba(27, 50, 89, 0.78);
+  font-size: clamp(16px, 2.4vw, 18px);
+  line-height: 1.4;
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(24px, 4vw, 40px);
+}
+
+.call-panel {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.97), rgba(232, 244, 255, 0.97));
+  border-radius: 32px;
+  padding: clamp(28px, 5vw, 48px);
+  box-shadow: 0 24px 60px rgba(55, 120, 187, 0.18);
+  border: 1px solid rgba(165, 199, 242, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #183152;
+}
+
+.badge {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(61, 166, 255, 0.25), rgba(83, 227, 171, 0.25));
+  color: #1b78c1;
+}
+
+.call-panel h1 {
+  margin: 0;
+  font-size: clamp(28px, 4.8vw, 44px);
+  line-height: 1.15;
+  color: #14325a;
+}
+
+.lead {
+  margin: 0;
+  font-size: clamp(16px, 2.5vw, 20px);
+  line-height: 1.65;
+  color: rgba(20, 50, 90, 0.82);
+}
+
+.call-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.primary-button {
+  align-self: flex-start;
+  padding: 16px 28px;
+  font-size: clamp(16px, 2.4vw, 18px);
+  font-weight: 600;
+  color: #083054;
+  background: linear-gradient(135deg, #6bdeff 0%, #7ff4c4 100%);
+  border-radius: 18px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 16px 40px rgba(94, 196, 255, 0.35);
+}
+
+.primary-button:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 46px rgba(127, 244, 196, 0.35);
+}
+
+.primary-button:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.primary-button.active {
+  background: linear-gradient(135deg, #5fc2ff 0%, #62e0a7 100%);
+}
+
+.primary-button[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.company-status {
+  margin-top: 12px;
+  font-size: 15px;
+  color: #1b3152;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  line-height: 1.45;
+}
+
+.company-source {
+  color: #367af6;
+  font-size: 14px;
+}
+
+.company-source.fallback {
+  color: #f28b52;
+}
+
+.company-error {
+  color: #c44545;
+  font-weight: 600;
+}
+
+.status-text {
+  margin: 0;
+  font-size: 15px;
+  color: rgba(24, 49, 82, 0.76);
+}
+
+.error-text {
+  margin: 0;
+  font-size: 14px;
+  color: #ff5c5c;
+}
+
+.benefits {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 10px;
+  font-size: clamp(15px, 2.2vw, 17px);
+  color: rgba(24, 49, 82, 0.78);
+}
+
+.info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 3vw, 28px);
+}
+
+.info-card {
+  background: rgba(255, 255, 255, 0.95);
+  color: #153051;
+  border-radius: 26px;
+  padding: clamp(24px, 4vw, 32px);
+  box-shadow: 0 20px 45px rgba(45, 115, 185, 0.18);
+  border: 1px solid rgba(168, 203, 242, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.metric-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.65;
+  pointer-events: none;
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.85), transparent 60%);
+  z-index: 0;
+}
+
+.metric-card .metric-value {
+  font-size: clamp(32px, 6vw, 48px);
+  font-weight: 700;
+  color: inherit;
+  position: relative;
+  z-index: 1;
+}
+
+.metric-card h2 {
+  margin: 0;
+  font-size: clamp(18px, 3vw, 24px);
+  color: inherit;
+  position: relative;
+  z-index: 1;
+  text-transform: none;
+}
+
+.metric-card p {
+  margin: 0;
+  font-size: clamp(15px, 2.2vw, 17px);
+  line-height: 1.6;
+  color: rgba(21, 48, 81, 0.75);
+  position: relative;
+  z-index: 1;
+}
+
+.metric-card-blue {
+  background: linear-gradient(145deg, rgba(149, 207, 255, 0.35), rgba(226, 242, 255, 0.95));
+  color: #1c60a3;
+}
+
+.metric-card-green {
+  background: linear-gradient(145deg, rgba(144, 245, 210, 0.38), rgba(229, 252, 244, 0.96));
+  color: #147454;
+}
+
+.metric-card-gold {
+  background: linear-gradient(145deg, rgba(255, 220, 150, 0.4), rgba(255, 246, 227, 0.96));
+  color: #9f6b0b;
+}
+
+.footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: rgba(24, 49, 82, 0.6);
+  font-size: clamp(14px, 2vw, 15px);
+}
+
+@media (max-width: 1080px) {
+  .main {
+    grid-template-columns: 1fr;
   }
-  to {
-    transform: rotate(360deg);
+
+  .call-panel {
+    order: 1;
+  }
+
+  .info-panel {
+    order: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .app {
+    padding: 32px clamp(16px, 6vw, 28px);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-note {
+    max-width: none;
+  }
+
+  .branding {
+    justify-content: center;
+  }
+
+  .call-panel {
+    padding: clamp(24px, 5vw, 36px);
+  }
+}
+
+@media (orientation: portrait) {
+  .main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info-panel {
+    flex-direction: column;
+  }
+
+  .call-panel,
+  .info-card {
+    width: 100%;
+  }
+
+  .call-panel {
+    order: 1;
+  }
+
+  .info-panel {
+    order: 2;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 900px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .app {
+    padding: 28px clamp(20px, 6vw, 40px);
+  }
+
+  .main {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .branding {
+    padding: 14px 18px;
+  }
+
+  .brand-name {
+    font-size: 22px;
+  }
+
+  .primary-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .benefits {
+    padding-left: 18px;
   }
 }
