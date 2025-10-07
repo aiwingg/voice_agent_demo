@@ -91,13 +91,18 @@ function App() {
         
         if (companyIdParam) {
           console.log('Fetching company data for ID:', companyIdParam);
+          setCompanyId(companyIdParam);
+          if (companyIdParam === 'starsmile') {
+            setLanguage('ru');
+          }
           const response = await fetch(`/api/company/${companyIdParam}`);
-          
+
           if (response.ok) {
             const data = await response.json();
-            setCompanyId(companyIdParam);
             setCompanyName(data.companyName);
-            setLanguage(data.language);
+            if (companyIdParam !== 'starsmile' && data.language) {
+              setLanguage(data.language);
+            }
             console.log('Company data loaded:', data);
           } else {
             console.warn('Company not found, using defaults');
@@ -274,6 +279,13 @@ function App() {
     }
   };
 
+  const isStarSmile = companyId === 'starsmile';
+  const styles = isStarSmile ? starSmileStyles : defaultStyles;
+  const globalStyles = isStarSmile ? starSmileGlobalStyles : defaultGlobalStyles;
+  const statusColors = isStarSmile
+    ? { speaking: '#6ad7c8', listening: '#4d7df0' }
+    : { speaking: '#4CAF50', listening: '#2196F3' };
+
   // Helper to render the appropriate status indicator
   const renderStatusIndicator = () => {
     if (!callActive) return null;
@@ -282,7 +294,7 @@ function App() {
       <div style={styles.statusIndicator}>
         <div style={{
           ...styles.indicatorDot,
-          backgroundColor: agentStatus === 'speaking' ? '#4CAF50' : '#2196F3',
+          backgroundColor: agentStatus === 'speaking' ? statusColors.speaking : statusColors.listening,
           animation: agentStatus === 'speaking' ? 'pulse 1.5s infinite' : 'listening 1.5s infinite'
         }}></div>
         <div style={styles.statusText}>{translations[language].agentStatus[agentStatus]}</div>
@@ -292,6 +304,10 @@ function App() {
 
   // Render the how it works section with dynamic powered by text
   const renderHowItWorks = () => {
+    if (isStarSmile) {
+      return null;
+    }
+
     return (
       <div style={styles.howItWorksContainer}>
         <h2 style={styles.howItWorksTitle}>
@@ -300,6 +316,39 @@ function App() {
       </div>
     );
   };
+
+  const renderDentalHighlights = () => {
+    if (!isStarSmile) {
+      return null;
+    }
+
+    return (
+      <div style={styles.highlightContainer}>
+        <h3 style={styles.highlightTitle}>Почему пациенты выбирают StarSmile</h3>
+        <ul style={styles.highlightList}>
+          <li style={styles.highlightItem}>
+            <span style={styles.highlightIcon}>🦷</span>
+            Мгновенно записывает на гигиену, отбеливание и плановые визиты в любое время суток.
+          </li>
+          <li style={styles.highlightItem}>
+            <span style={styles.highlightIcon}>💬</span>
+            Дружелюбно отвечает на вопросы по страховке, ценам и лечению, снимая тревогу пациентов.
+          </li>
+          <li style={styles.highlightItem}>
+            <span style={styles.highlightIcon}>📅</span>
+            Синхронизируется с расписанием клиники, чтобы ни один пациент не ждал ответа.
+          </li>
+        </ul>
+      </div>
+    );
+  };
+
+  const sectionTitleText = isStarSmile
+    ? 'Познакомьтесь с вашим виртуальным администратором клиники'
+    : translations[language].sectionTitle;
+  const sectionDescriptionText = isStarSmile
+    ? 'Пригласите пациентов пообщаться с заботливым и компетентным помощником, который запишет на приём, расскажет о процедурах и ответит на любые вопросы.'
+    : translations[language].sectionDescription;
 
   // Show loading spinner while fetching company data
   if (isLoading) {
@@ -313,49 +362,38 @@ function App() {
 
   return (
     <div style={styles.appContainer}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        body {
-          margin: 0;
-          padding: 0;
-          font-family: 'Inter', sans-serif;
-          background-color: #f5f5f5;
-        }
-        
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.2); opacity: 0.7; }
-        }
-        
-        @keyframes listening {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+      <style>{globalStyles}</style>
 
       <div style={styles.cardContainer}>
         <div style={styles.header}>
-          <h1 style={styles.title}>{companyName}</h1>
+          {isStarSmile ? (
+            <>
+              <div style={styles.heroContent}>
+                <div style={styles.heroBadge}>StarSmile — стоматологическая клиника</div>
+                <h1 style={styles.heroTitle}>{companyName || 'StarSmile Dental'}</h1>
+                <p style={styles.heroSubtitle}>
+                  Наш виртуальный администратор приветствует пациентов, записывает на приём и консультирует по услугам круглосуточно.
+                </p>
+              </div>
+              <div style={styles.heroImage} aria-hidden="true">🪥</div>
+            </>
+          ) : (
+            <h1 style={styles.title}>{companyName}</h1>
+          )}
         </div>
       </div>
 
       <div style={styles.cardContainer}>
         <div style={styles.card}>
-          <h2 style={styles.sectionTitle}>{translations[language].sectionTitle}</h2>
-          <p style={styles.sectionDescription}>{translations[language].sectionDescription}</p>
+          <h2 style={styles.sectionTitle}>{sectionTitleText}</h2>
+          <p style={styles.sectionDescription}>{sectionDescriptionText}</p>
           
           {renderStatusIndicator()}
-          
+
           <div style={styles.buttonContainer}>
             {micPermission !== 'granted' && (
-              <button 
-                onClick={requestMicrophoneAccess} 
+              <button
+                onClick={requestMicrophoneAccess}
                 style={styles.micButton}
               >
                 {translations[language].micPermissionButton[micPermission]}
@@ -387,7 +425,9 @@ function App() {
               </button>
             )}
           </div>
-          
+
+          {renderDentalHighlights()}
+
           {renderHowItWorks()}
         </div>
       </div>
@@ -395,7 +435,59 @@ function App() {
   );
 }
 
-const styles = {
+const defaultGlobalStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #f5f5f5;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+  }
+
+  @keyframes listening {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const starSmileGlobalStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f4faff 0%, #fff8fb 100%);
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.8; }
+  }
+
+  @keyframes listening {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const defaultStyles = {
   appContainer: {
     minHeight: '100vh',
     width: '100%',
@@ -554,7 +646,253 @@ const styles = {
     fontWeight: '600',
     marginBottom: '15px',
     color: '#333',
-  }
+  },
+  highlightContainer: {
+    display: 'none',
+  },
+  highlightTitle: {},
+  highlightList: {},
+  highlightItem: {},
+  highlightIcon: {},
+  heroContent: {},
+  heroBadge: {},
+  heroTitle: {},
+  heroSubtitle: {},
+  heroImage: {},
+};
+
+const starSmileStyles = {
+  appContainer: {
+    minHeight: '100vh',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    background: 'linear-gradient(135deg, #f4faff 0%, #fff8fb 100%)',
+    padding: '32px 20px',
+    boxSizing: 'border-box',
+  },
+  loadingContainer: {
+    minHeight: '100vh',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'linear-gradient(135deg, #f4faff 0%, #fff8fb 100%)',
+  },
+  loadingSpinner: {
+    width: '48px',
+    height: '48px',
+    border: '5px solid rgba(255, 255, 255, 0.7)',
+    borderTop: '5px solid #4d7df0',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+    marginBottom: '20px',
+  },
+  loadingText: {
+    fontSize: '16px',
+    color: '#4d5a6b',
+    fontFamily: 'Poppins, sans-serif',
+  },
+  cardContainer: {
+    width: '100%',
+    maxWidth: '900px',
+    margin: '10px 0',
+  },
+  header: {
+    background: 'linear-gradient(135deg, rgba(77, 125, 240, 0.95), rgba(104, 217, 255, 0.9))',
+    borderRadius: '24px',
+    padding: '36px 42px',
+    boxShadow: '0 20px 40px rgba(77, 125, 240, 0.25)',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '24px',
+    flexWrap: 'wrap',
+    color: 'white',
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: '24px',
+    padding: '36px 42px',
+    textAlign: 'center',
+    boxShadow: '0 20px 40px rgba(13, 54, 134, 0.08)',
+    backdropFilter: 'blur(6px)',
+  },
+  title: {
+    fontSize: '28px',
+    fontWeight: '700',
+    marginBottom: '8px',
+    color: '#333',
+  },
+  subtitle: {
+    fontSize: '18px',
+    color: '#666',
+    margin: 0,
+  },
+  sectionTitle: {
+    fontSize: '26px',
+    fontWeight: '600',
+    marginBottom: '12px',
+    color: '#264066',
+  },
+  sectionDescription: {
+    fontSize: '17px',
+    color: '#4d5a6b',
+    marginBottom: '30px',
+    maxWidth: '560px',
+    margin: '0 auto 30px auto',
+  },
+  buttonContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
+    marginBottom: '32px',
+  },
+  micButton: {
+    backgroundColor: 'rgba(77, 125, 240, 0.18)',
+    color: '#264066',
+    border: '1px solid rgba(77, 125, 240, 0.35)',
+    borderRadius: '16px',
+    padding: '14px 22px',
+    fontSize: '15px',
+    cursor: 'pointer',
+    width: '100%',
+    maxWidth: '320px',
+    transition: 'all 0.3s ease',
+  },
+  callButton: {
+    background: 'linear-gradient(135deg, #4d7df0, #66d9ff)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '40px',
+    padding: '18px 36px',
+    fontSize: '17px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    maxWidth: '320px',
+    width: '100%',
+    boxShadow: '0 18px 30px rgba(77, 125, 240, 0.35)',
+  },
+  endCallButton: {
+    background: 'linear-gradient(135deg, #ff5c7a, #ff8a8a)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '40px',
+    padding: '18px 36px',
+    fontSize: '17px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    maxWidth: '320px',
+    width: '100%',
+    boxShadow: '0 18px 30px rgba(255, 92, 122, 0.3)',
+  },
+  phoneIcon: {
+    marginRight: '12px',
+  },
+  statusIndicator: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    margin: '12px 0 24px 0',
+  },
+  indicatorDot: {
+    width: '14px',
+    height: '14px',
+    borderRadius: '50%',
+    marginBottom: '10px',
+  },
+  statusText: {
+    fontSize: '15px',
+    color: '#4d5a6b',
+  },
+  howItWorksContainer: {
+    display: 'none',
+  },
+  howItWorksTitle: {
+    display: 'none',
+  },
+  highlightContainer: {
+    textAlign: 'left',
+    backgroundColor: 'rgba(77, 125, 240, 0.08)',
+    borderRadius: '20px',
+    padding: '24px 26px',
+    marginBottom: '10px',
+  },
+  highlightTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#264066',
+    marginBottom: '16px',
+  },
+  highlightList: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  highlightItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    color: '#3a5878',
+    fontSize: '15px',
+    lineHeight: 1.6,
+  },
+  highlightIcon: {
+    fontSize: '22px',
+    lineHeight: 1,
+  },
+  heroContent: {
+    flex: 1,
+    minWidth: '220px',
+  },
+  heroBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    color: 'white',
+    padding: '8px 14px',
+    borderRadius: '999px',
+    fontSize: '13px',
+    fontWeight: '500',
+    marginBottom: '18px',
+    letterSpacing: '0.5px',
+  },
+  heroTitle: {
+    fontSize: '34px',
+    fontWeight: '700',
+    margin: '0 0 12px 0',
+    color: 'white',
+  },
+  heroSubtitle: {
+    fontSize: '16px',
+    lineHeight: 1.6,
+    margin: 0,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  heroImage: {
+    width: '120px',
+    height: '120px',
+    borderRadius: '32px',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '48px',
+    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.12)',
+  },
 };
 
 export default App;
