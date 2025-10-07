@@ -324,19 +324,19 @@ function App() {
 
     return (
       <div style={styles.highlightContainer}>
-        <h3 style={styles.highlightTitle}>Почему пациенты выбирают StarSmile</h3>
+        <h3 style={styles.highlightTitle}>Преимущества ИИ-ресепшиониста для вашей клиники</h3>
         <ul style={styles.highlightList}>
           <li style={styles.highlightItem}>
-            <span style={styles.highlightIcon}>🦷</span>
-            Мгновенно записывает на гигиену, отбеливание и плановые визиты в любое время суток.
+            <span style={styles.highlightIcon}>🤖</span>
+            Автоматически обрабатывает до 80% звонков, освобождая администраторов для сложных задач и повышения качества сервиса.
           </li>
           <li style={styles.highlightItem}>
-            <span style={styles.highlightIcon}>💬</span>
-            Дружелюбно отвечает на вопросы по страховке, ценам и лечению, снимая тревогу пациентов.
+            <span style={styles.highlightIcon}>📊</span>
+            Передаёт владельцу отчёты о лидах, пропущенных звонках и популярных услугах, помогая принимать управленческие решения.
           </li>
           <li style={styles.highlightItem}>
-            <span style={styles.highlightIcon}>📅</span>
-            Синхронизируется с расписанием клиники, чтобы ни один пациент не ждал ответа.
+            <span style={styles.highlightIcon}>⚙️</span>
+            Интегрируется с CRM и расписанием клиники, чтобы пациенты мгновенно получали подтверждение записи без участия персонала.
           </li>
         </ul>
       </div>
@@ -344,10 +344,10 @@ function App() {
   };
 
   const sectionTitleText = isStarSmile
-    ? 'Познакомьтесь с вашим виртуальным администратором клиники'
+    ? 'Познакомьтесь с ИИ-ресепшионистом для стоматологических клиник'
     : translations[language].sectionTitle;
   const sectionDescriptionText = isStarSmile
-    ? 'Пригласите пациентов пообщаться с заботливым и компетентным помощником, который запишет на приём, расскажет о процедурах и ответит на любые вопросы.'
+    ? 'Запустите голосового ассистента, который круглосуточно отвечает на вопросы пациентов, записывает на приём и помогает владельцам увеличивать загрузку кресел.'
     : translations[language].sectionDescription;
 
   // Show loading spinner while fetching company data
@@ -369,10 +369,10 @@ function App() {
           {isStarSmile ? (
             <>
               <div style={styles.heroContent}>
-                <div style={styles.heroBadge}>StarSmile — стоматологическая клиника</div>
-                <h1 style={styles.heroTitle}>{companyName || 'StarSmile Dental'}</h1>
+                <div style={styles.heroBadge}>ИИ-ресепшионист для стоматологических клиник</div>
+                <h1 style={styles.heroTitle}>{companyName || 'StarSmile AI Receptionist'}</h1>
                 <p style={styles.heroSubtitle}>
-                  Наш виртуальный администратор приветствует пациентов, записывает на приём и консультирует по услугам круглосуточно.
+                  Продвинутый голосовой ассистент, который помогает клиникам принимать звонки, записывать пациентов и продавать дополнительные услуги без участия персонала.
                 </p>
               </div>
               <div style={styles.heroImage} aria-hidden="true">🪥</div>
