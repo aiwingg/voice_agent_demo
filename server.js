@@ -51,7 +51,7 @@ const API_KEY = 'key_7335fefc4661ce2fd9f790780ad5';
 app.post('/api/create-web-call', async (req, res) => {
   try {
     // Get company ID from request body, or use default if not provided
-    const { company_id } = req.body;
+    const { company_id, use_secondary } = req.body;
     let agent_id = DEFAULT_AGENT_ID;
     let language = DEFAULT_LANGUAGE;
     let company_name = DEFAULT_COMPANY_NAME;
@@ -68,19 +68,29 @@ app.post('/api/create-web-call', async (req, res) => {
     }
 
     const retellClient = new Retell({ apiKey: API_KEY });
+
+    let retellDynamicVariables;
+
+    if (company_id === 'starsmile') {
+      const phoneNumber = use_secondary ? '79000012345' : '71234567899';
+      retellDynamicVariables = { phone_number: phoneNumber };
+    } else {
+      retellDynamicVariables = {
+        'user_number': '9280291870',
+        'name': company_name,
+        'purchase_history': '- Филе ЦБ 15кг мон зам Благояр (339.2 руб / кг) [ЦБ-00001549]\n - Филе ЦБ Халяль "Для жарки" мон зам Благояр (342.38 руб / кг) [01-00003115]\n - Филе ЦБ Халяль мон зам Чагулов ИП (311.0 руб / кг) [01-00012701]\n - 1 сорт Тушка ЦБ пак зам Благояр (180.2 руб / кг) [00-00000028]\n - 1 сорт Тушка ЦБ Халяль пак зам АН-НУР (192.92 руб / кг) [01-00003181]'
+      };
+    }
+
     const webCallResponse = await retellClient.call.createWebCall({
       agent_id: agent_id,
-      metadata: { 
+      metadata: {
         demo: true,
         language: language,
         company_name: company_name,
         valid_company: valid_company
       },
-      retell_llm_dynamic_variables: {
-        'user_number': '9280291870',
-        'name': company_name,
-        'purchase_history': '- Филе ЦБ 15кг мон зам Благояр (339.2 руб / кг) [ЦБ-00001549]\n - Филе ЦБ Халяль "Для жарки" мон зам Благояр (342.38 руб / кг) [01-00003115]\n - Филе ЦБ Халяль мон зам Чагулов ИП (311.0 руб / кг) [01-00012701]\n - 1 сорт Тушка ЦБ пак зам Благояр (180.2 руб / кг) [00-00000028]\n - 1 сорт Тушка ЦБ Халяль пак зам АН-НУР (192.92 руб / кг) [01-00003181]'
-      },
+      retell_llm_dynamic_variables: retellDynamicVariables,
     });
     
     // Add the additional metadata to the response

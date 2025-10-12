@@ -78,6 +78,7 @@ function App() {
   const [companyName, setCompanyName] = useState(DEFAULT_COMPANY_NAME);
   const [companyId, setCompanyId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [useSecondaryNumber, setUseSecondaryNumber] = useState(false);
   const retellClientRef = useRef(null);
   const isProcessingRef = useRef(false);
 
@@ -162,6 +163,10 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    setUseSecondaryNumber(false);
+  }, [companyId]);
+
   // Check if microphone permission is already granted
   const checkMicrophonePermission = async () => {
     try {
@@ -205,13 +210,19 @@ function App() {
   // Fetch the web call token from your own server endpoint
   const createWebCall = async () => {
     try {
+      const payload = {
+        metadata: { demo: true },
+        company_id: companyId
+      };
+
+      if (companyId === 'starsmile') {
+        payload.use_secondary = useSecondaryNumber;
+      }
+
       const response = await fetch('/api/create-web-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          metadata: { demo: true },
-          company_id: companyId
-        }),
+        body: JSON.stringify(payload),
       });
       
       if (!response.ok) {
@@ -399,10 +410,38 @@ function App() {
                 {translations[language].micPermissionButton[micPermission]}
               </button>
             )}
-            
+
+            {isStarSmile && (
+              <button
+                type="button"
+                onClick={() => setUseSecondaryNumber(prev => !prev)}
+                style={{
+                  ...styles.toggleButton,
+                  ...(useSecondaryNumber ? styles.toggleButtonActive : {}),
+                }}
+                aria-pressed={useSecondaryNumber}
+              >
+                <span style={styles.toggleLabel}>вторичный</span>
+                <span
+                  style={{
+                    ...styles.toggleSwitch,
+                    ...(useSecondaryNumber ? styles.toggleSwitchActive : {}),
+                  }}
+                  aria-hidden="true"
+                >
+                  <span
+                    style={{
+                      ...styles.toggleHandle,
+                      ...(useSecondaryNumber ? styles.toggleHandleActive : {}),
+                    }}
+                  />
+                </span>
+              </button>
+            )}
+
             {callActive ? (
-              <button 
-                onClick={endCall} 
+              <button
+                onClick={endCall}
                 style={styles.endCallButton}
               >
                 {translations[language].callButton.end}
@@ -763,6 +802,61 @@ const starSmileStyles = {
     width: '100%',
     maxWidth: '320px',
     transition: 'all 0.3s ease',
+  },
+  toggleButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    width: '100%',
+    maxWidth: '320px',
+    padding: '14px 18px',
+    borderRadius: '18px',
+    border: '1px solid rgba(77, 125, 240, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    color: '#264066',
+    fontSize: '15px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  toggleButtonActive: {
+    borderColor: 'rgba(106, 215, 200, 0.8)',
+    boxShadow: '0 12px 20px rgba(77, 125, 240, 0.18)',
+    background: 'rgba(77, 125, 240, 0.12)',
+    color: '#1f3b66',
+  },
+  toggleLabel: {
+    flex: 1,
+    textAlign: 'left',
+  },
+  toggleSwitch: {
+    width: '48px',
+    height: '26px',
+    borderRadius: '999px',
+    background: 'rgba(77, 125, 240, 0.25)',
+    position: 'relative',
+    transition: 'background 0.3s ease',
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '3px',
+  },
+  toggleSwitchActive: {
+    background: 'linear-gradient(135deg, #4d7df0, #6ad7c8)',
+  },
+  toggleHandle: {
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    background: '#ffffff',
+    boxShadow: '0 4px 12px rgba(77, 125, 240, 0.25)',
+    transform: 'translateX(0)',
+    transition: 'transform 0.3s ease',
+  },
+  toggleHandleActive: {
+    transform: 'translateX(22px)',
   },
   callButton: {
     background: 'linear-gradient(135deg, #4d7df0, #66d9ff)',
