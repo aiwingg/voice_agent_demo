@@ -73,7 +73,12 @@ app.post('/api/create-web-call', async (req, res) => {
 
     if (company_id === 'starsmile') {
       const phoneNumber = use_secondary ? '79000012345' : '71234567899';
-      retellDynamicVariables = { phone_number: phoneNumber };
+      retellDynamicVariables = {
+        phone_number: phoneNumber,
+        base_url: 'https://dental-tool-server-6d62d5f59bd5.herokuapp.com',
+        retell_session_id: 'retell_scenario_4',
+        api_key: '9362e9262b2972fa5e2c7fa33865611549dc457a56804bf5e4c2e3d8632e130c',
+      };
     } else {
       retellDynamicVariables = {
         'user_number': '9280291870',
