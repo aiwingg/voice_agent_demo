@@ -1,38 +1,365 @@
-.App {
-  text-align: center;
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
+body {
+  margin: 0;
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  background: linear-gradient(180deg, #f4f8ff 0%, #ffffff 55%, #f3fff6 100%);
+  color: #10304a;
+}
+
+.app {
+  position: relative;
+  min-height: 100vh;
+  padding: 48px clamp(20px, 5vw, 72px) 32px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(32px, 4vw, 56px);
+  background: radial-gradient(circle at top left, rgba(137, 196, 255, 0.35), transparent 45%),
+    radial-gradient(circle at bottom right, rgba(130, 232, 192, 0.35), transparent 55%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(234, 245, 255, 0.95) 55%, rgba(231, 251, 245, 0.95) 100%);
+  overflow: hidden;
+}
+
+.background-orbs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
   pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(0.6px);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0));
+  opacity: 0.35;
+  animation: float 18s ease-in-out infinite;
+}
+
+.orb-2 {
+  background: radial-gradient(circle at 70% 30%, rgba(120, 189, 255, 0.55), rgba(120, 189, 255, 0));
+  animation-duration: 22s;
+}
+
+.orb-3 {
+  background: radial-gradient(circle at 50% 50%, rgba(116, 227, 183, 0.55), rgba(116, 227, 183, 0));
+  animation-duration: 26s;
+}
+
+@keyframes float {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -20px, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: clamp(16px, 3vw, 32px);
+}
+
+.branding {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  border-radius: 20px;
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 18px 44px rgba(142, 184, 220, 0.25);
+  border: 1px solid rgba(197, 216, 238, 0.6);
+}
+
+.logo {
+  width: clamp(72px, 12vw, 120px);
+  height: auto;
+}
+
+.brand-text {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.brand-name {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0f3154;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.brand-tagline {
+  margin: 4px 0 0;
+  font-size: clamp(14px, 2vw, 16px);
+  color: rgba(16, 48, 74, 0.72);
+}
+
+.header-note {
+  max-width: 420px;
+  margin: 0;
+  color: rgba(25, 60, 96, 0.76);
+  font-size: clamp(16px, 2.4vw, 18px);
+  line-height: 1.4;
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(24px, 4vw, 40px);
+}
+
+.call-panel {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(230, 244, 255, 0.96));
+  border-radius: 32px;
+  padding: clamp(28px, 5vw, 48px);
+  box-shadow: 0 26px 62px rgba(119, 171, 215, 0.28);
+  border: 1px solid rgba(182, 210, 238, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #0f3154;
+}
+
+.badge {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(119, 198, 255, 0.35), rgba(139, 246, 201, 0.35));
+  color: #0f4c81;
+  box-shadow: inset 0 0 0 1px rgba(94, 160, 210, 0.25);
+}
+
+.call-panel h1 {
+  margin: 0;
+  font-size: clamp(28px, 4.8vw, 44px);
+  line-height: 1.15;
+  color: #0e365d;
+}
+
+.lead {
+  margin: 0;
+  font-size: clamp(16px, 2.5vw, 20px);
+  line-height: 1.65;
+  color: rgba(18, 64, 102, 0.82);
+}
+
+.call-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.primary-button {
+  align-self: flex-start;
+  padding: 16px 28px;
+  font-size: clamp(16px, 2.4vw, 18px);
+  font-weight: 600;
+  color: #043959;
+  background: linear-gradient(135deg, #66f2d1 0%, #6bb6ff 100%);
+  border-radius: 18px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+  box-shadow: 0 16px 38px rgba(89, 178, 255, 0.45);
+}
+
+.primary-button:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 48px rgba(76, 231, 198, 0.45);
+  filter: brightness(1.05);
+}
+
+.primary-button:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.primary-button.active {
+  background: linear-gradient(135deg, #4dc7ff 0%, #4fe2a9 100%);
+}
+
+.status-text {
+  margin: 0;
+  font-size: 15px;
+  color: rgba(17, 69, 111, 0.78);
+}
+
+.error-text {
+  margin: 0;
+  font-size: 14px;
+  color: #d65353;
+}
+
+.benefits {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 10px;
+  font-size: clamp(15px, 2.2vw, 17px);
+  color: rgba(24, 74, 108, 0.8);
+}
+
+.info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 3vw, 28px);
+}
+
+.info-card {
+  background: rgba(255, 255, 255, 0.9);
+  color: #133c5d;
+  border-radius: 26px;
+  padding: clamp(24px, 4vw, 32px);
+  box-shadow: 0 20px 45px rgba(142, 193, 231, 0.28);
+  border: 1px solid rgba(186, 212, 236, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-card h2 {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 26px);
+  color: #0f3658;
+}
+
+.info-card p {
+  margin: 0;
+  font-size: clamp(15px, 2.2vw, 17px);
+  line-height: 1.6;
+  color: rgba(19, 60, 93, 0.76);
+}
+
+.metric-value {
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 700;
+  color: #1ea88a;
+  background: linear-gradient(135deg, rgba(102, 242, 209, 0.25), rgba(107, 182, 255, 0.25));
+  border-radius: 18px;
+  padding: 8px 14px;
+  align-self: flex-start;
+  box-shadow: inset 0 0 0 1px rgba(110, 196, 230, 0.4);
+}
+
+.footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: rgba(28, 74, 108, 0.6);
+  font-size: clamp(14px, 2vw, 15px);
+}
+
+@media (max-width: 1080px) {
+  .main {
+    grid-template-columns: 1fr;
   }
-  to {
-    transform: rotate(360deg);
+
+  .call-panel {
+    order: 1;
+  }
+
+  .info-panel {
+    order: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .app {
+    padding: 32px clamp(16px, 6vw, 28px);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-note {
+    max-width: none;
+  }
+
+  .branding {
+    justify-content: center;
+  }
+
+  .call-panel {
+    padding: clamp(24px, 5vw, 36px);
+  }
+}
+
+@media (orientation: portrait) {
+  .main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .call-panel {
+    order: 1;
+  }
+
+  .info-panel {
+    order: 2;
+  }
+
+  .info-panel {
+    flex-direction: column;
+  }
+
+  .call-panel,
+  .info-card {
+    width: 100%;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 900px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .app {
+    padding: 28px clamp(20px, 6vw, 40px);
+  }
+
+  .main {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .branding {
+    padding: 14px 18px;
+  }
+
+  .brand-name {
+    font-size: 22px;
+  }
+
+  .primary-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .benefits {
+    padding-left: 18px;
   }
 }
