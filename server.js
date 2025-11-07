@@ -72,7 +72,7 @@ app.post('/api/create-web-call', async (req, res) => {
     let retellDynamicVariables;
 
     if (company_id === 'starsmile') {
-      const phoneNumber = use_secondary ? '79000012345' : '71234567899';
+      const phoneNumber = use_secondary ? '79008007060' : '79008007062';
       retellDynamicVariables = {
         phone_number: phoneNumber,
         base_url: 'https://dental-tool-server-ba68ed8bb9d8.herokuapp.com',
